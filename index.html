@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Price Action Tracker v21</title>
+    
+    <!-- 引入 Google Noto Sans TC 字型 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #101214;
+            --card-bg: #1d2126;
+            --text-primary: #f0f4f8;
+            --text-secondary: #9aa0a6;
+            --border-color: #2f353d;
+            --border-dark: #454d57; 
+            
+            /* 優化：降低飽和度與對比的粉彩系 Dark Mode 色板 */
+            --primary-color: #69c0ff;  /* 柔和藍 */
+            --green-teal: #5cdbd3;     /* 柔和青 */
+            --ma-color: #ffd666;       /* 柔和黃 */
+            --price-up: #ff7875;       /* 柔和紅 */
+            --price-down: #73d13d;     /* 柔和綠 */
+            
+            --row-hover-bg: #262c33;
+            --input-bg: #2a3038;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            padding: 1rem 1rem 8rem 1rem; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .global-top-bar {
+            width: 100%; max-width: 30rem; display: flex;
+            justify-content: space-between; align-items: flex-end;
+            margin-bottom: 0.75rem; padding: 0 0.25rem;
+        }
+
+        .global-timestamp { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; font-variant-numeric: tabular-nums; }
+        .global-page-indicator { font-size: 0.9rem; color: var(--primary-color); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+        .bias-rules-banner {
+            width: 100%; max-width: 30rem; display: flex;
+            justify-content: space-between; gap: 0.75rem;
+            margin-bottom: 1rem; padding: 0 0.25rem;
+        }
+
+        .rule-item {
+            flex: 1; background-color: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 0.5rem; padding: 0.6rem; text-align: center;
+            font-size: 0.8rem; color: var(--text-secondary);
+        }
+        .rule-item.hot span { color: var(--price-up); font-weight: 700; font-size: 0.9rem; display: block; margin-top: 0.2rem; }
+        .rule-item.buy span { color: var(--ma-color); font-weight: 700; font-size: 0.9rem; display: block; margin-top: 0.2rem; }
+
+        .viewport-wrapper { width: 100%; max-width: 100%; display: flex; justify-content: center; }
+        .stocks-container { display: flex; width: 100%; transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+
+        .stock-card {
+            flex: 0 0 100%; width: 100%; max-width: 30rem; 
+            background-color: var(--card-bg); border-radius: 0.75rem;
+            padding: 1.25rem 1.25rem 0 1.25rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color); margin: 0 auto;
+            position: relative; overflow: visible;
+        }
+
+        .card-sticky-top {
+            position: sticky; top: 0; background-color: var(--card-bg); z-index: 30;
+            margin: -1.25rem -1.25rem 0 -1.25rem; padding: 1.25rem 1.25rem 0.5rem 1.25rem;
+            border-bottom: 1px solid var(--border-color); border-top-left-radius: 0.75rem;
+            border-top-right-radius: 0.75rem; box-shadow: 0 6px 12px -6px rgba(0,0,0,0.6);
+        }
+
+        .story-tap-area-left, .story-tap-area-right {
+            position: absolute; top: 0; bottom: 0; width: 40%; z-index: 25; cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .story-tap-area-left { left: 0; border-top-left-radius: 0.75rem; border-bottom-left-radius: 0.75rem; }
+        .story-tap-area-right { right: 0; border-top-right-radius: 0.75rem; border-bottom-right-radius: 0.75rem; }
+        .story-tap-area-left:active, .story-tap-area-right:active { background-color: rgba(255, 255, 255, 0.06); transition: background-color 0s; }
+
+        header { margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+        .stock-meta { display: flex; align-items: center; gap: 0.4rem; position: relative; z-index: 35; font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
+        .link-icon { text-decoration: none; font-size: 1rem; transition: opacity 0.2s; }
+        .link-icon:hover { opacity: 0.7; }
+        .stock-id-small { background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.75rem; color: var(--text-primary); }
+        
+        .stock-price-large { font-size: 2.2rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums; }
+        .price-up { color: var(--price-up); }
+        .price-down { color: var(--price-down); }
+        .price-flat { color: var(--text-primary); }
+
+        .info-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.25rem; }
+        .close-price-display { font-size: 0.95rem; color: var(--text-secondary); position: relative; z-index: 35; }
+        .close-price-editable {
+            font-weight: 700; font-size: 1.05rem; color: var(--primary-color); cursor: pointer;
+            border-bottom: 1px dashed var(--primary-color); padding: 0 2px; display: inline-block;
+            font-variant-numeric: tabular-nums;
+        }
+        .close-price-editable:hover { color: #8bcfff; border-bottom-color: #8bcfff; }
+
+        .fake-table-header {
+            display: flex; justify-content: space-between; font-size: 0.8rem;
+            color: var(--text-secondary); font-weight: 500; padding-top: 0.5rem;
+        }
+
+        .table-scroll-box { position: relative; z-index: 15; padding-bottom: 1.25rem; }
+        .result-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        
+        .result-table td {
+            padding: 0.6rem 0.2rem; font-size: 0.9rem; border-bottom: 1px solid var(--border-color);
+            font-variant-numeric: tabular-nums; transition: background-color 0.1s ease; font-weight: 500;
+        }
+
+        .result-table td:nth-child(1) { text-align: left; padding-left: 0.4rem; }
+        .result-table td:nth-child(2) { text-align: right; }
+        .result-table td:nth-child(3) { text-align: right; padding-right: 0.4rem; }
+        .result-table tbody tr:hover td { background-color: var(--row-hover-bg); cursor: pointer; }
+
+        .drop-percent { color: var(--green-teal); font-weight: 500; display: inline-block; }
+        .drop-percent.up-label { color: var(--price-up); } 
+        .target-price { font-weight: 500; }
+        
+        .strategy-cell { font-size: 0.85rem !important; }
+        .badge-heavy { background-color: var(--green-teal); color: #101214; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-weight: 700; }
+        .badge-light { color: var(--text-secondary); font-size: 0.8rem; }
+
+        .current-price-row-up td { background-color: rgba(255, 120, 117, 0.08); border-top: 1px solid rgba(255, 120, 117, 0.4) !important; border-bottom: 1px solid rgba(255, 120, 117, 0.4) !important; }
+        .current-price-row-up .drop-percent, .current-price-row-up .target-price, .current-price-row-up .strategy-cell { color: var(--price-up); }
+        
+        .current-price-row-down td { background-color: rgba(115, 209, 61, 0.08); border-top: 1px solid rgba(115, 209, 61, 0.4) !important; border-bottom: 1px solid rgba(115, 209, 61, 0.4) !important; }
+        .current-price-row-down .drop-percent, .current-price-row-down .target-price, .current-price-row-down .strategy-cell { color: var(--price-down); }
+        
+        .current-price-row-flat td { background-color: rgba(154, 160, 166, 0.05); border-top: 1px solid rgba(154, 160, 166, 0.4) !important; border-bottom: 1px solid rgba(154, 160, 166, 0.4) !important; }
+        .current-price-row-flat .drop-percent, .current-price-row-flat .target-price, .current-price-row-flat .strategy-cell { color: #9aa0a6; }
+
+        .ma-inserted-row td { background-color: rgba(255, 214, 102, 0.05); border-top: 1px solid rgba(255, 214, 102, 0.2) !important; border-bottom: 1px solid rgba(255, 214, 102, 0.2) !important; }
+        .ma-inserted-row .drop-percent, .ma-inserted-row .target-price, .ma-inserted-row .strategy-cell { color: var(--ma-color); }
+
+        .floating-bar {
+            position: fixed; bottom: calc(2.5rem + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+            background-color: rgba(29, 33, 38, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-dark); border-radius: 2.5rem;
+            padding: 0.4rem 0.6rem; display: flex; align-items: center; gap: 1rem;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6); z-index: 100;
+        }
+
+        .nav-btn-fat {
+            background: none; border: none; color: var(--text-primary); font-size: 1.15rem; cursor: pointer;
+            width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; transition: background-color 0.2s;
+        }
+        .nav-btn-fat:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .nav-group-arrows-fat { display: flex; background-color: rgba(0, 0, 0, 0.3); border-radius: 1.5rem; padding: 0.1rem; gap: 0.5rem; }
+
+        .refresh-circle-btn-fat {
+            background-color: var(--primary-color); border: none; color: #101214;
+            width: 46px; height: 46px; border-radius: 50%; font-size: 1.35rem; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(105, 192, 255, 0.4); transition: background-color 0.2s;
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center;
+            z-index: 200; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; padding: 1rem;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-card {
+            background-color: var(--card-bg); border: 1px solid var(--border-dark); border-radius: 0.75rem; 
+            width: 100%; max-width: 24rem; padding: 1.25rem; box-shadow: 0 10px 30px rgba(0,0,0,0.6); position: relative;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+
+        .form-group-single { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; height: 2.6rem; }
+        .form-group-single input {
+            flex: 1; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 0.375rem; 
+            padding: 0 0.75rem; line-height: 2.6rem; height: 2.6rem; color: var(--text-primary); font-size: 0.95rem; outline: none;
+        }
+        .form-group-single input:focus { border-color: var(--primary-color); }
+        .add-btn-full { background-color: var(--green-teal); color: #101214; border: none; padding: 0 1.2rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; height: 100%; }
+
+        .setting-switch-group {
+            display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; 
+            border-top: 1px solid var(--border-color); margin-top: 0.5rem; font-size: 0.95rem;
+        }
+        .switch-label { position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer; }
+        .switch-label input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #454d57; transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .stock-list-manage { max-height: 12rem; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 0.375rem; }
+        .manage-item { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border-color); }
+        .manage-item:last-child { border-bottom: none; }
+        .manage-info { display: flex; flex-direction: column; }
+        .manage-symbol { font-weight: 600; font-size: 0.95rem; }
+        .manage-name { font-size: 0.75rem; color: var(--text-secondary); }
+        .manage-actions { display: flex; gap: 0.35rem; }
+        .action-btn { background-color: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 0.25rem; cursor: pointer; }
+        .action-btn.del { color: var(--price-up); border-color: rgba(255,120,117,0.3); }
+        
+        .clear-all-btn { width: 100%; margin-top: 0.75rem; padding: 0.6rem; font-size: 0.9rem; font-weight: 600; background-color: rgba(255,120,117,0.1); }
+        .status-msg { text-align: center; color: var(--text-secondary); padding: 2rem 0; }
+
+        @media (min-width: 768px) {
+            body { padding-bottom: 2rem; }
+            .global-top-bar, .bias-rules-banner { max-width: 75rem; }
+            .stocks-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(23rem, 1fr)); gap: 1.2rem; transform: none !important; width: 100%; max-width: 75rem; }
+            .stock-card { margin: 0; max-width: 100%; }
+            .floating-bar { position: fixed; bottom: 1.5rem; right: 1.5rem; left: auto; transform: none; }
+            .nav-group-arrows-fat { display: none; } 
+            .story-tap-area-left, .story-tap-area-right { display: none; } 
+        }
+        @media (max-width: 767px) { .viewport-wrapper { overflow: hidden; width: 100%; } }
+    </style>
+</head>
+<body>
+
+<div class="global-top-bar">
+    <div class="global-timestamp" id="globalTimestamp">數據載入中...</div>
+    <div class="global-page-indicator" id="globalPageIndicator">0/0</div>
+</div>
+
+<div class="bias-rules-banner">
+    <div class="rule-item hot">⚠️ 過熱勿追<br><span>月乖離 > +4%</span></div>
+    <div class="rule-item buy">💰 黃金買點<br><span>月乖離 < -4%</span></div>
+</div>
+
+<div class="viewport-wrapper">
+    <div class="stocks-container" id="stocksContainer">
+        <!-- JS 動態掛載 -->
+    </div>
+</div>
+
+<div class="floating-bar">
+    <div class="nav-group-arrows-fat">
+        <button class="nav-btn-fat" onclick="moveSlide(-1)">❮</button>
+        <button class="nav-btn-fat" onclick="moveSlide(1)">❯</button>
+    </div>
+    <button class="refresh-circle-btn-fat" id="refreshBtn" onclick="fetchAllData()">⟳</button>
+    <button class="nav-btn-fat" onclick="toggleModal(true)">⚙️</button>
+</div>
+
+<div class="modal-overlay" id="settingModal" onclick="handleOverlayClick(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>⚙️ 自選股與策略管理</h3>
+            <button class="nav-btn-fat" style="font-size:1.2rem;" onclick="toggleModal(false)">✕</button>
+        </div>
+        <div class="form-group-single">
+            <input type="text" id="newSymbol" placeholder="輸入代號+名稱 (例: 0050 台灣50)" autocomplete="off" autocapitalize="off">
+            <button class="add-btn-full" onclick="addStock()">新增</button>
+        </div>
+        <div class="stock-list-manage" id="manageList"></div>
+        
+        <button class="action-btn del clear-all-btn" onclick="clearAllStocks()">🗑️ 一鍵清除所有清單</button>
+        
+        <div class="setting-switch-group">
+            <label for="rangeSwitch">解鎖深水區恐慌防線 (±10%)</label>
+            <label class="switch-label">
+                <input type="checkbox" id="rangeSwitch" onchange="handleRangeSwitchChange(this)">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<script>
+    const defaultStocks = [
+        { symbol: '2330.TW', name: '台積電' },
+        { symbol: '0050.TW', name: '台灣50' },
+        { symbol: '00981A.TW', name: '主動統一' }
+    ];
+
+    let manualPrevCloses = JSON.parse(localStorage.getItem('manual_prev_closes')) || {};
+    let runtimeTechnicalCache = {};
+    let stockList = JSON.parse(localStorage.getItem('custom_stock_list')) || defaultStocks;
+    let isDeepRange = JSON.parse(localStorage.getItem('strategy_deep_range')) || false;
+    let currentSlideIndex = 0;
+    let latestMarketTime = 0;
+
+    const otcPrefixes = ['30','31','32','33','34','35','36','37','41','45','47','49','52','53','54','55','61','62','64','65','66','80','81','82','83','84','89'];
+
+    // 新增 ETF 參數，判斷專屬跳動級距
+    function getTickPrice(price, isETF) {
+        if (isETF) {
+            return price < 50 ? Math.round(price * 100) / 100 : Math.round(price * 20) / 20;
+        }
+        if (price < 10) return Math.round(price * 100) / 100;
+        if (price >= 10 && price < 50) return Math.round(price * 20) / 20;
+        if (price >= 50 && price < 100) return Math.round(price * 10) / 10;
+        if (price >= 100 && price < 500) return Math.round(price * 2) / 2;
+        if (price >= 500 && price < 1000) return Math.round(price);
+        return Math.round(price / 5) * 5;
+    }
+
+    const formatPrice = (val, isETF) => {
+        if (typeof val !== 'number' || isNaN(val)) return val;
+        const p = getTickPrice(val, isETF);
+        if (isETF) return p.toFixed(2); // ETF 固定顯示到小數第二位
+        if (p < 50) return p.toFixed(2);
+        if (p < 500) return p.toFixed(1);
+        return p.toString();
+    };
+
+    function getStrategyPercentages() {
+        const baseDrop = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+        const deepDrop = [5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
+        const baseRise = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+        const deepRise = [5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
+        let drops = isDeepRange ? baseDrop.concat(deepDrop) : baseDrop;
+        let rises = isDeepRange ? baseRise.concat(deepRise) : baseRise;
+        return { drops, rises };
+    }
+
+    function saveToStorage() { localStorage.setItem('custom_stock_list', JSON.stringify(stockList)); }
+    function saveManualPrices() { localStorage.setItem('manual_prev_closes', JSON.stringify(manualPrevCloses)); }
+    function handleOverlayClick(e) { if (e.target.id === 'settingModal') toggleModal(false); }
+
+    function handleRangeSwitchChange(el) {
+        isDeepRange = el.checked;
+        localStorage.setItem('strategy_deep_range', JSON.stringify(isDeepRange));
+    }
+
+    function toggleModal(show) {
+        const modal = document.getElementById('settingModal');
+        if (show) {
+            document.getElementById('rangeSwitch').checked = isDeepRange;
+            renderManageList();
+            modal.classList.add('active');
+        } else {
+            modal.classList.remove('active');
+            initDashboard(); 
+        }
+    }
+
+    function updateGlobalTimestamp(timestampMs) {
+        const targetDate = timestampMs ? new Date(timestampMs) : new Date();
+        const year = targetDate.getFullYear();
+        const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+        const date = String(targetDate.getDate()).padStart(2, '0');
+        const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+        const dayName = days[targetDate.getDay()];
+        const timeStr = targetDate.toLocaleTimeString('zh-TW', { hour12: false });
+        
+        let prefix = timestampMs ? "資料時間：" : "當前時間：";
+        document.getElementById('globalTimestamp').innerHTML = `${prefix}<br>${year}-${month}-${date} ${dayName} ${timeStr}`;
+    }
+
+    function addStock() {
+        const symbolInput = document.getElementById('newSymbol');
+        let fullText = symbolInput.value.trim();
+        if (!fullText) return alert('請輸入有效代號！');
+
+        const parts = fullText.split(/\s+/);
+        let rawInput = parts[0].toUpperCase();
+        let customName = parts.length > 1 ? parts.slice(1).join(' ') : null;
+
+        let symbol = rawInput;
+        if (/^[A-Z0-9]+$/.test(rawInput) && !rawInput.includes('.')) {
+            if (rawInput.startsWith('00')) {
+                symbol = rawInput + '.TW';
+            } else {
+                const prefix = rawInput.substring(0, 2);
+                if (otcPrefixes.includes(prefix)) {
+                    symbol = rawInput + '.TWO';
+                } else {
+                    symbol = rawInput + '.TW';
+                }
+            }
+        }
+        
+        const finalName = customName || symbol.split('.')[0];
+        if (stockList.some(item => item.symbol === symbol)) return alert('此股票已在清單中！');
+
+        stockList.unshift({ symbol, name: finalName });
+        saveToStorage();
+        symbolInput.value = '';
+        renderManageList();
+    }
+
+    function deleteStock(index) {
+        const symbol = stockList[index].symbol;
+        stockList.splice(index, 1);
+        saveToStorage();
+        if (manualPrevCloses[symbol]) {
+            delete manualPrevCloses[symbol];
+            saveManualPrices();
+        }
+        renderManageList();
+    }
+    
+    function clearAllStocks() {
+        if (confirm('確定要清除所有自選股嗎？此動作無法復原。')) {
+            stockList = [];
+            saveToStorage();
+            manualPrevCloses = {};
+            saveManualPrices();
+            renderManageList();
+        }
+    }
+
+    function moveOrder(index, direction) {
+        if (index + direction < 0 || index + direction >= stockList.length) return;
+        const temp = stockList[index];
+        stockList[index] = stockList[index + direction];
+        stockList[index + direction] = temp;
+        saveToStorage();
+        renderManageList();
+    }
+
+    function renderManageList() {
+        const container = document.getElementById('manageList');
+        if (stockList.length === 0) {
+            container.innerHTML = '<div style="padding:1rem; text-align:center; color:var(--text-secondary);">自選清單為空</div>';
+            return;
+        }
+        container.innerHTML = stockList.map((item, index) => `
+            <div class="manage-item">
+                <div class="manage-info">
+                    <span class="manage-symbol">${item.symbol}</span>
+                    <span class="manage-name">${item.name}</span>
+                </div>
+                <div class="manage-actions">
+                    <button class="action-btn" onclick="moveOrder(${index}, -1)">🔼</button>
+                    <button class="action-btn" onclick="moveOrder(${index}, 1)">🔽</button>
+                    <button class="action-btn del" onclick="deleteStock(${index})">❌</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function editPreviousClose(symbol, index) {
+        const isETF = symbol.startsWith('00');
+        const currentVal = manualPrevCloses[symbol] || document.getElementById(`prev-${index}`).innerText;
+        const parseCurrent = parseFloat(currentVal);
+        
+        const userInput = prompt(`[手動修正昨收價] 請輸入 ${stockList[index].name}(${symbol}) 的正確昨收價格:`, isNaN(parseCurrent) ? '' : parseCurrent);
+        if (userInput === null) return; 
+        
+        const newPrice = parseFloat(userInput);
+        if (isNaN(newPrice) || newPrice <= 0) return alert('請輸入大於 0 的有效數字價格！');
+        
+        manualPrevCloses[symbol] = newPrice;
+        saveManualPrices();
+        document.getElementById(`prev-${index}`).innerText = formatPrice(newPrice, isETF);
+        
+        if (runtimeTechnicalCache[symbol]) {
+            const cache = runtimeTechnicalCache[symbol];
+            const tableBox = document.getElementById(`table-box-${index}`);
+            renderCombinedTable(tableBox, newPrice, cache.currentPrice, cache.ma5, cache.ma10, cache.ma20, cache.ma60, cache.bias20, index, isETF);
+        } else {
+            fetchSingleStock(stockList[index], index);
+        }
+    }
+
+    function initDashboard() {
+        const container = document.getElementById('stocksContainer');
+        if (stockList.length === 0) {
+            container.innerHTML = '<div class="status-msg">請點擊右下角 ⚙️ 按鈕新增自選股</div>';
+            updatePageIndicator();
+            return;
+        }
+
+        container.innerHTML = stockList.map((stock, index) => `
+            <div class="stock-card" id="card-${index}">
+                <div class="story-tap-area-left" onclick="moveSlide(-1)"></div>
+                <div class="story-tap-area-right" onclick="moveSlide(1)"></div>
+                
+                <div class="card-sticky-top">
+                    <!-- 標題與連結範圍分離 -->
+                    <header>
+                        <div class="stock-meta">
+                            <span id="title-name-${index}">${stock.name}</span>
+                            <span class="stock-id-small">${stock.symbol}</span>
+                            <a href="https://tw.stock.yahoo.com/quote/${stock.symbol}" target="_blank" class="link-icon">🔗</a>
+                        </div>
+                        <div class="stock-price-large" id="current-price-header-${index}">--</div>
+                    </header>
+                    <div class="info-bar">
+                        <div class="close-price-display">昨收價: <span id="prev-${index}" class="close-price-editable" onclick="editPreviousClose('${stock.symbol}', ${index})">--</span></div>
+                    </div>
+                    
+                    <div class="fake-table-header">
+                        <div style="width: 35%; text-align: left; padding-left: 0.4rem;">指標/級距</div>
+                        <div style="width: 30%; text-align: right;">試算價格</div>
+                        <div style="width: 35%; text-align: right; padding-right: 0.4rem;">操作策略</div>
+                    </div>
+                </div>
+                
+                <div class="table-scroll-box" id="table-box-${index}">
+                    <div class="status-msg">等待載入中...</div>
+                </div>
+            </div>
+        `).join('');
+        
+        currentSlideIndex = 0;
+        updateSlidePosition();
+        fetchAllData();
+    }
+
+    async function fetchSingleStock(stock, index) {
+        const isETF = stock.symbol.startsWith('00');
+        const tableBox = document.getElementById(`table-box-${index}`);
+        try {
+            const nocache = new Date().getTime();
+            const intradayUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1m&range=5d&_t=${nocache}`;
+            const historyUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=4mo&_t=${nocache}`;
+
+            const [intradayRes, historyRes] = await Promise.all([
+                fetch(`https://corsproxy.io/?${encodeURIComponent(intradayUrl)}`, { cache: 'no-store' }),
+                fetch(`https://corsproxy.io/?${encodeURIComponent(historyUrl)}`, { cache: 'no-store' })
+            ]);
+
+            if (!intradayRes.ok) throw new Error('API 連線失敗');
+            const intradayData = await intradayRes.json();
+            const historyData = await historyRes.json();
+            
+            const liveMeta = intradayData.chart.result[0].meta;
+            if (liveMeta.regularMarketTime) {
+                const msTime = liveMeta.regularMarketTime * 1000;
+                if (msTime > latestMarketTime) latestMarketTime = msTime;
+            }
+
+            // 完全採用 API 提供的準確報價與昨收價
+            let currentPrice = liveMeta.regularMarketPrice;
+            let previousClose = liveMeta.regularMarketPreviousClose || liveMeta.previousClose || liveMeta.chartPreviousClose;
+            
+            if (!currentPrice || !previousClose) throw new Error('暫無即時報價');
+
+            let apiName = liveMeta.shortName;
+            if (apiName && stock.name === stock.symbol.split('.')[0]) {
+                 stock.name = apiName; 
+                 saveToStorage();
+            }
+            document.getElementById(`title-name-${index}`).innerText = stock.name;
+
+            if (manualPrevCloses[stock.symbol]) previousClose = manualPrevCloses[stock.symbol];
+
+            // 移除日期資訊，顯示純昨收價
+            document.getElementById(`prev-${index}`).innerHTML = formatPrice(previousClose, isETF);
+
+            const histResult = historyData.chart.result[0];
+            const histTimes = histResult.timestamp || [];
+            const histCloses = histResult.indicators?.quote?.[0]?.close || [];
+            
+            let validDailies = [];
+            for(let i=0; i<histTimes.length; i++){
+                if(histCloses[i] !== null && typeof histCloses[i] === 'number') validDailies.push(histCloses[i]);
+            }
+            // 補上今日最新價去計算均線
+            validDailies.push(currentPrice);
+
+            const ma5_raw = calculateMAValue(validDailies, 5);
+            const ma10_raw = calculateMAValue(validDailies, 10);
+            const ma20_raw = calculateMAValue(validDailies, 20);
+            const ma60_raw = calculateMAValue(validDailies, 60);
+
+            const ma5 = ma5_raw ? getTickPrice(ma5_raw, isETF) : null;
+            const ma10 = ma10_raw ? getTickPrice(ma10_raw, isETF) : null;
+            const ma20 = ma20_raw ? getTickPrice(ma20_raw, isETF) : null;
+            const ma60 = ma60_raw ? getTickPrice(ma60_raw, isETF) : null;
+            
+            let bias20 = ma20 ? ((currentPrice - ma20) / ma20) * 100 : 0;
+
+            runtimeTechnicalCache[stock.symbol] = { currentPrice, ma5, ma10, ma20, ma60, bias20 };
+            renderCombinedTable(tableBox, previousClose, currentPrice, ma5, ma10, ma20, ma60, bias20, index, isETF);
+        } catch (err) {
+            tableBox.innerHTML = `<div class="status-msg" style="color:var(--price-up);">${err.message || '讀取異常'}</div>`;
+        }
+    }
+
+    function calculateMAValue(prices, count) {
+        if (prices.length < count) return null;
+        const sum = prices.slice(-count).reduce((acc, v) => acc + v, 0);
+        return sum / count;
+    }
+
+    async function fetchAllData() {
+        document.getElementById('globalTimestamp').innerHTML = "數據載入中...";
+        const btn = document.getElementById('refreshBtn');
+        btn.style.transform = 'rotate(360deg)';
+        btn.style.transition = 'transform 0.4s ease';
+        
+        latestMarketTime = 0; 
+        const promises = stockList.map((stock, index) => fetchSingleStock(stock, index));
+        await Promise.all(promises);
+        
+        if (latestMarketTime > 0) {
+            updateGlobalTimestamp(latestMarketTime);
+        } else {
+            updateGlobalTimestamp(Date.now());
+        }
+
+        setTimeout(() => { btn.style.transform = 'none'; btn.style.transition = 'none'; }, 400);
+    }
+
+    function getBiasLabel(name, maPrice, currentPrice) {
+        const bias = (((currentPrice - maPrice) / maPrice) * 100).toFixed(2);
+        const sign = bias > 0 ? '+' : '';
+        return `${name} (${sign}${bias}%)`;
+    }
+
+    function getTacticalAdvice(type, targetPrice, currentPrice, prevClose, bias20) {
+        if (type === 'current') return ''; 
+        if (Math.abs(targetPrice - currentPrice) < 0.02) return ''; 
+
+        if (targetPrice > currentPrice) {
+            if (type === 'ma') return '<span class="badge-light">壓力</span>';
+            return '<span class="badge-light">停利</span>';
+        } else {
+            if (type === 'ma') return '建倉 20%';
+            const dropFromBase = ((prevClose - targetPrice) / prevClose) * 100;
+            if (dropFromBase >= 0 && dropFromBase <= 2.5) return '買進 10%';
+            if (dropFromBase > 2.5 && dropFromBase < 5) return '加碼 20%';
+            if (dropFromBase >= 5) {
+                if (bias20 <= -4) return '<span class="badge-heavy">重擊 40%</span>';
+                return '加碼 20%';
+            }
+            return '';
+        }
+    }
+
+    function renderCombinedTable(targetEl, prevClose, currentPrice, ma5, ma10, ma20, ma60, bias20, index, isETF) {
+        let itemsToInsert = [];
+        const currentDiff = currentPrice - prevClose;
+        const currentDiffPercent = (currentDiff / prevClose) * 100;
+        const currentSign = currentDiffPercent > 0 ? '+' : '';
+        
+        const headerPriceEl = document.getElementById(`current-price-header-${index}`);
+        if (headerPriceEl) {
+            headerPriceEl.innerText = formatPrice(currentPrice, isETF);
+            if (currentDiff > 0) headerPriceEl.className = 'stock-price-large price-up';
+            else if (currentDiff < 0) headerPriceEl.className = 'stock-price-large price-down';
+            else headerPriceEl.className = 'stock-price-large price-flat';
+        }
+
+        itemsToInsert.push({ 
+            type: 'current', price: currentPrice, sortKey: currentDiffPercent, 
+            label: `現價 ${currentSign}${currentDiffPercent.toFixed(2)}%`,
+            strategy: getTacticalAdvice('current', currentPrice, currentPrice, prevClose, bias20)
+        });
+
+        if (ma5)  itemsToInsert.push({ type: 'ma', price: ma5,  sortKey: ((ma5 - prevClose)/prevClose)*100,  label: 'MA5', strategy: getTacticalAdvice('ma', ma5, currentPrice, prevClose, bias20) });
+        if (ma10) itemsToInsert.push({ type: 'ma', price: ma10, sortKey: ((ma10 - prevClose)/prevClose)*100, label: getBiasLabel('MA10', ma10, currentPrice), strategy: getTacticalAdvice('ma', ma10, currentPrice, prevClose, bias20) });
+        if (ma20) itemsToInsert.push({ type: 'ma', price: ma20, sortKey: ((ma20 - prevClose)/prevClose)*100, label: getBiasLabel('MA20', ma20, currentPrice), strategy: getTacticalAdvice('ma', ma20, currentPrice, prevClose, bias20) });
+        if (ma60) itemsToInsert.push({ type: 'ma', price: ma60, sortKey: ((ma60 - prevClose)/prevClose)*100, label: 'MA60', strategy: getTacticalAdvice('ma', ma60, currentPrice, prevClose, bias20) });
+
+        const { drops, rises } = getStrategyPercentages();
+        
+        rises.forEach((percent) => {
+            const factor = percent / 100;
+            const targetPrice = getTickPrice(prevClose * (1 + factor), isETF);
+            itemsToInsert.push({
+                type: 'fixed-percent', price: targetPrice, sortKey: percent,
+                label: `+${percent}%`, strategy: getTacticalAdvice('fixed-percent', targetPrice, currentPrice, prevClose, bias20)
+            });
+        });
+
+        drops.forEach((percent) => {
+            const factor = percent / 100;
+            const targetPrice = getTickPrice(prevClose * (1 - factor), isETF);
+            itemsToInsert.push({
+                type: 'fixed-percent', price: targetPrice, sortKey: -percent,
+                label: `-${percent}%`, strategy: getTacticalAdvice('fixed-percent', targetPrice, currentPrice, prevClose, bias20)
+            });
+        });
+
+        const uniqueItems = [];
+        const seenPrices = new Set();
+        
+        itemsToInsert.sort((a, b) => b.sortKey - a.sortKey).forEach(item => {
+            if (!seenPrices.has(item.price)) {
+                seenPrices.add(item.price);
+                uniqueItems.push(item);
+            }
+        });
+
+        let tableHtml = `<table class="result-table">
+            <colgroup>
+                <col style="width: 35%;">
+                <col style="width: 30%;">
+                <col style="width: 35%;">
+            </colgroup>
+            <tbody>`;
+
+        uniqueItems.forEach((item) => {
+            let rowClass = 'class="normal-row"';
+            
+            if (item.type === 'current') {
+                const diff = item.price - prevClose;
+                if (diff > 0) rowClass = 'class="current-price-row-up"';
+                else if (diff < 0) rowClass = 'class="current-price-row-down"';
+                else rowClass = 'class="current-price-row-flat"';
+            } else if (item.type === 'ma') {
+                rowClass = 'class="ma-inserted-row"';
+            }
+
+            const isUpLabel = item.sortKey > 0;
+            
+            tableHtml += `<tr ${rowClass}>
+                <td><span class="drop-percent ${isUpLabel && item.type !== 'current' ? 'up-label' : ''}">${item.label}</span></td>
+                <td class="target-price">${formatPrice(item.price, isETF)}</td>
+                <td class="strategy-cell">${item.strategy}</td>
+            </tr>`;
+        });
+
+        tableHtml += `</tbody></table>`;
+        targetEl.innerHTML = tableHtml;
+    }
+
+    function moveSlide(direction) {
+        if (window.innerWidth >= 768) return; 
+        currentSlideIndex += direction;
+        if (currentSlideIndex < 0) currentSlideIndex = 0;
+        if (currentSlideIndex >= stockList.length) currentSlideIndex = stockList.length - 1;
+        updateSlidePosition();
+    }
+
+    function updateSlidePosition() {
+        if (window.innerWidth < 768) {
+            const container = document.getElementById('stocksContainer');
+            container.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
+        }
+        updatePageIndicator();
+    }
+
+    function updatePageIndicator() {
+        const indicator = document.getElementById('globalPageIndicator');
+        if (stockList.length === 0) indicator.innerText = '0/0';
+        else indicator.innerText = `${currentSlideIndex + 1}/${stockList.length}`;
+    }
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) document.getElementById('stocksContainer').style.transform = 'none';
+        else updateSlidePosition();
+    });
+
+    window.addEventListener('DOMContentLoaded', initDashboard);
+</script>
+
+</body>
+</html>
