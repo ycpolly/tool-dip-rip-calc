@@ -81,6 +81,9 @@
             font-weight: 700;
             font-variant-numeric: tabular-nums;
             margin-top: -2px;
+            display: block;
+            min-width: 44px;
+            text-align: center;
         }
 
         .viewport-wrapper {
@@ -392,7 +395,7 @@
             align-items: center;
             background-color: rgba(0, 0, 0, 0.3);
             border-radius: 1.5rem;
-            padding: 0.1rem 0.2rem;
+            padding: 3px;
             gap: 0.1rem;
         }
 
@@ -739,6 +742,14 @@
     </div>
 
     <div class="floating-bar">
+        <button class="refresh-circle-btn-fat" id="refreshBtn" onclick="fetchAllData()"
+            ontouchstart="event.preventDefault(); fetchAllData();">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+                <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+            </svg>
+        </button>
         <div class="nav-group-arrows-fat">
             <button class="nav-btn-fat" onclick="moveSlide(-1)" ontouchstart="event.preventDefault(); moveSlide(-1);">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -754,14 +765,7 @@
                 </svg>
             </button>
         </div>
-        <button class="refresh-circle-btn-fat" id="refreshBtn" onclick="fetchAllData()"
-            ontouchstart="event.preventDefault(); fetchAllData();">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
-                <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
-            </svg>
-        </button>
+
         <button class="nav-btn-fat" onclick="toggleModal(true)"
             ontouchstart="event.preventDefault(); toggleModal(true);">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
