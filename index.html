@@ -107,7 +107,7 @@
             border: 1px solid var(--border-color);
             margin: 0 auto;
             position: relative;
-            overflow: visible;
+            overflow: hidden;
         }
 
         .card-sticky-top {
@@ -127,7 +127,7 @@
         .story-tap-area-right {
             position: absolute;
             top: 0;
-            bottom: 0;
+            height: 7.5rem;
             width: 50%;
             z-index: 25;
             cursor: pointer;
@@ -136,13 +136,11 @@
         .story-tap-area-left {
             left: 0;
             border-top-left-radius: 0.75rem;
-            border-bottom-left-radius: 0.75rem;
         }
 
         .story-tap-area-right {
             right: 0;
             border-top-right-radius: 0.75rem;
-            border-bottom-right-radius: 0.75rem;
         }
 
         header {
@@ -346,42 +344,7 @@
             background-color: rgba(255, 214, 102, 0.0);
         }
 
-        .bias-rules-banner {
-            width: 100%;
-            max-width: 30rem;
-            display: flex;
-            justify-content: space-between;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-            padding: 0 0.25rem;
-        }
 
-        .rule-item {
-            flex: 1;
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            padding: 0.6rem;
-            text-align: center;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .rule-item.hot span {
-            color: var(--price-up);
-            font-weight: 700;
-            font-size: 0.9rem;
-            display: block;
-            margin-top: 0.2rem;
-        }
-
-        .rule-item.buy span {
-            color: var(--ma-color);
-            font-weight: 700;
-            font-size: 0.9rem;
-            display: block;
-            margin-top: 0.2rem;
-        }
 
         .floating-bar {
             position: fixed;
@@ -749,7 +712,7 @@
             }
 
             .bias-rules-banner {
-                margin-top: 0.5rem;
+                display: none;
             }
         }
     </style>
@@ -765,12 +728,6 @@
     <div class="viewport-wrapper">
         <div class="stocks-container" id="stocksContainer">
             <!-- JS 動態掛載 -->
-        </div>
-    </div>
-
-    <div class="bias-rules-banner">
-        <div class="rule-item hot">⚠️ 過熱勿追<br><span>月乖離 > +4.0%</span></div>
-        <div class="rule-item buy">💰 黃金買點<br><span>月乖離 < -4.0%</span>
         </div>
     </div>
 
@@ -1337,12 +1294,44 @@
             else indicator.innerText = `${currentSlideIndex + 1}/${stockList.length}`;
         }
 
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        function setupTouchEvents() {
+            const wrapper = document.querySelector('.viewport-wrapper');
+            if (!wrapper) return;
+
+            wrapper.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            wrapper.addEventListener('touchend', (e) => {
+                if (window.innerWidth >= 768) return;
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                const diffX = touchEndX - touchStartX;
+                const diffY = touchEndY - touchStartY;
+
+                if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
+                    if (diffX < 0) {
+                        moveSlide(1);
+                    } else {
+                        moveSlide(-1);
+                    }
+                }
+            }, { passive: true });
+        }
+
         window.addEventListener('resize', () => {
             if (window.innerWidth >= 768) document.getElementById('stocksContainer').style.left = '0';
             else updateSlidePosition();
         });
 
-        window.addEventListener('DOMContentLoaded', initDashboard);
+        window.addEventListener('DOMContentLoaded', () => {
+            initDashboard();
+            setupTouchEvents();
+        });
     </script>
 
 </body>
