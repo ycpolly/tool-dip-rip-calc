@@ -35,6 +35,16 @@
             padding: 0;
             font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
             -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        input,
+        textarea {
+            -webkit-user-select: text;
+            user-select: text;
         }
 
         body {
@@ -118,10 +128,9 @@
             position: absolute;
             top: 0;
             bottom: 0;
-            width: 40%;
+            width: 50%;
             z-index: 25;
             cursor: pointer;
-            transition: background-color 0.2s ease;
         }
 
         .story-tap-area-left {
@@ -134,12 +143,6 @@
             right: 0;
             border-top-right-radius: 0.75rem;
             border-bottom-right-radius: 0.75rem;
-        }
-
-        .story-tap-area-left:active,
-        .story-tap-area-right:active {
-            background-color: rgba(255, 255, 255, 0.06);
-            transition: background-color 0s;
         }
 
         header {
@@ -184,6 +187,13 @@
             color: var(--text-primary);
             line-height: 1.1;
             font-variant-numeric: tabular-nums;
+        }
+
+        .price-change-small {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-left: 0.4rem;
+            display: inline-block;
         }
 
         .price-up {
@@ -309,10 +319,12 @@
         }
 
         .result-table tr.current-price-row-up {
+            border: 0.5px solid var(--price-up);
             outline: 0.5px solid var(--price-up);
         }
 
         .result-table tr.current-price-row-down {
+            border: 0.5px solid var(--price-down);
             outline: 0.5px solid var(--price-down);
         }
 
@@ -704,9 +716,40 @@
         }
 
         @media (max-width: 767px) {
+            body {
+                padding: 0.75rem 0.75rem 0 0.75rem;
+                height: 100dvh;
+                overflow: hidden;
+            }
+
             .viewport-wrapper {
                 overflow: hidden;
                 width: 100%;
+            }
+
+            .stock-card {
+                display: flex;
+                flex-direction: column;
+                height: calc(100dvh - 7.5rem - env(safe-area-inset-bottom, 0px));
+                max-height: calc(100dvh - 7.5rem - env(safe-area-inset-bottom, 0px));
+                padding-bottom: 0;
+            }
+
+            .card-sticky-top {
+                flex: 0 0 auto;
+                position: static;
+                box-shadow: none;
+            }
+
+            .table-scroll-box {
+                flex: 1 1 auto;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 1rem;
+            }
+
+            .bias-rules-banner {
+                margin-top: 0.5rem;
             }
         }
     </style>
@@ -1149,10 +1192,24 @@
 
             const headerPriceEl = document.getElementById(`current-price-header-${index}`);
             if (headerPriceEl) {
-                headerPriceEl.innerText = formatPrice(currentPrice, isETF);
-                if (currentDiff > 0) headerPriceEl.className = 'stock-price-large price-up';
-                else if (currentDiff < 0) headerPriceEl.className = 'stock-price-large price-down';
-                else headerPriceEl.className = 'stock-price-large price-flat';
+                const formattedPrice = formatPrice(currentPrice, isETF);
+                const diffAbs = Math.abs(currentDiff);
+                const formattedDiff = formatPrice(diffAbs, isETF);
+                const percentAbs = Math.abs(currentDiffPercent).toFixed(2);
+
+                let changeStr = '';
+                if (currentDiff > 0) {
+                    changeStr = `▲ ${formattedDiff} (${percentAbs}%)`;
+                    headerPriceEl.className = 'stock-price-large price-up';
+                } else if (currentDiff < 0) {
+                    changeStr = `▼ ${formattedDiff} (${percentAbs}%)`;
+                    headerPriceEl.className = 'stock-price-large price-down';
+                } else {
+                    changeStr = `0.00 (0.00%)`;
+                    headerPriceEl.className = 'stock-price-large price-flat';
+                }
+
+                headerPriceEl.innerHTML = `${formattedPrice} <span class="price-change-small">${changeStr}</span>`;
             }
 
             itemsToInsert.push({
@@ -1233,6 +1290,24 @@
 
             tableHtml += `</tbody></table>`;
             targetEl.innerHTML = tableHtml;
+
+            if (window.innerWidth < 768) {
+                setTimeout(() => {
+                    scrollToAnchorRow(targetEl);
+                }, 100);
+            }
+        }
+
+        function scrollToAnchorRow(targetEl) {
+            if (!targetEl) return;
+            const currentRow = targetEl.querySelector('.current-price-row-up, .current-price-row-down, .current-price-row-flat');
+            if (!currentRow) return;
+
+            const anchorRow = currentRow.previousElementSibling || currentRow;
+            targetEl.scrollTo({
+                top: anchorRow.offsetTop - 4,
+                behavior: 'smooth'
+            });
         }
 
         function moveSlide(direction) {
@@ -1247,6 +1322,11 @@
             if (window.innerWidth < 768) {
                 const container = document.getElementById('stocksContainer');
                 container.style.left = `-${currentSlideIndex * 100}%`;
+
+                const currentTableBox = document.getElementById(`table-box-${currentSlideIndex}`);
+                if (currentTableBox) {
+                    setTimeout(() => scrollToAnchorRow(currentTableBox), 50);
+                }
             }
             updatePageIndicator();
         }
