@@ -644,6 +644,192 @@
             padding: 2rem 0;
         }
 
+        /* 損益試算 Modal / Bottom Sheet */
+        .calc-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 250;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            padding: 0;
+        }
+
+        .calc-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .calc-modal-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-dark);
+            border-top-left-radius: 1.25rem;
+            border-top-right-radius: 1.25rem;
+            width: 100%;
+            max-width: 30rem;
+            padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom)) 1.25rem;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.7);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .calc-modal-overlay.active .calc-modal-card {
+            transform: translateY(0);
+        }
+
+        @media (min-width: 768px) {
+            .calc-modal-overlay {
+                align-items: center;
+                padding: 1rem;
+            }
+
+            .calc-modal-card {
+                border-radius: 0.85rem;
+                transform: translateY(20px);
+                max-width: 26rem;
+            }
+
+            .calc-modal-overlay.active .calc-modal-card {
+                transform: translateY(0);
+            }
+        }
+
+        .calc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .calc-stock-badge {
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.15rem 0.5rem;
+            border-radius: 0.25rem;
+            color: var(--text-secondary);
+        }
+
+        .calc-hero-result {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .calc-hero-title {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.2rem;
+        }
+
+        .calc-hero-profit {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .calc-hero-roi {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-top: 0.2rem;
+        }
+
+        .calc-breakeven-banner {
+            margin-top: 0.6rem;
+            font-size: 0.85rem;
+            color: var(--ma-color);
+            background: rgba(181, 164, 150, 0.12);
+            padding: 0.4rem 0.6rem;
+            border-radius: 0.375rem;
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        .calc-grid-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .calc-field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .calc-field-group label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .calc-field-group input,
+        .calc-field-group select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.6rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            outline: none;
+            width: 100%;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .calc-field-group input:focus,
+        .calc-field-group select:focus {
+            border-color: var(--primary-color);
+        }
+
+        .calc-quick-shares {
+            display: flex;
+            gap: 0.4rem;
+            margin-top: 0.3rem;
+        }
+
+        .quick-share-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+
+        .quick-share-btn:active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .calc-details-box {
+            background: rgba(0, 0, 0, 0.18);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .calc-details-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
         @media (min-width: 768px) {
             body {
                 padding-bottom: 2rem;
@@ -689,6 +875,7 @@
         @media (max-width: 767px) {
             body {
                 padding: 0.75rem 0.75rem 0 0.75rem;
+                height: 100vh;
                 height: 100dvh;
                 overflow: hidden;
             }
@@ -696,13 +883,16 @@
             .viewport-wrapper {
                 overflow-x: hidden;
                 width: 100%;
+                min-height: 20rem;
                 touch-action: pan-y;
             }
 
             .stock-card {
                 display: flex;
                 flex-direction: column;
+                height: calc(100vh - 8.5rem);
                 height: calc(100dvh - 8.5rem - env(safe-area-inset-bottom, 0px));
+                max-height: calc(100vh - 8.5rem);
                 max-height: calc(100dvh - 8.5rem - env(safe-area-inset-bottom, 0px));
                 padding-bottom: 0;
             }
@@ -775,6 +965,22 @@
                 <circle cx="12" cy="12" r="3" />
             </svg>
         </button>
+        <button class="nav-btn-fat" onclick="openCalcModalDefault()"
+            ontouchstart="event.preventDefault(); openCalcModalDefault();" title="損益試算">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2" />
+                <line x1="8" y1="6" x2="16" y2="6" />
+                <line x1="16" y1="14" x2="16" y2="18" />
+                <path d="M8 10h.01" />
+                <path d="M12 10h.01" />
+                <path d="M16 10h.01" />
+                <path d="M8 14h.01" />
+                <path d="M12 14h.01" />
+                <path d="M8 18h.01" />
+                <path d="M12 18h.01" />
+            </svg>
+        </button>
     </div>
 
     <div class="modal-overlay" id="settingModal" onclick="handleOverlayClick(event)">
@@ -801,6 +1007,80 @@
                     <input type="checkbox" id="rangeSwitch" onchange="handleRangeSwitchChange(this)">
                     <span class="slider"></span>
                 </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="calc-modal-overlay" id="calcModal" onclick="handleCalcOverlayClick(event)">
+        <div class="calc-modal-card" onclick="event.stopPropagation()">
+            <div class="calc-header">
+                <div>
+                    <h3 id="calcStockTitle" style="display:inline-block; margin-right:0.4rem;">損益試算</h3>
+                    <span class="calc-stock-badge" id="calcStockBadge">--</span>
+                </div>
+                <button class="nav-btn-fat" style="font-size:1.2rem; width:36px; height:36px;"
+                    onclick="toggleCalcModal(false)">✕</button>
+            </div>
+
+            <div class="calc-hero-result">
+                <div class="calc-hero-title">預估淨損益</div>
+                <div class="calc-hero-profit price-flat" id="calcNetProfit">$0</div>
+                <div class="calc-hero-roi price-flat" id="calcRoi">+0.00%</div>
+                <div class="calc-breakeven-banner" id="calcBreakEven">保本賣價: -- 元</div>
+            </div>
+
+            <div class="calc-grid-form">
+                <div class="calc-field-group">
+                    <label for="calcBuyPrice">買入價格 (昨收)</label>
+                    <input type="number" id="calcBuyPrice" step="any" inputmode="decimal" oninput="onCalcInputChange()">
+                </div>
+                <div class="calc-field-group">
+                    <label for="calcSellPrice">預期賣價 (目標)</label>
+                    <input type="number" id="calcSellPrice" step="any" inputmode="decimal"
+                        oninput="onCalcInputChange()">
+                </div>
+                <div class="calc-field-group" style="grid-column: span 2;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <label for="calcShares">交易股數</label>
+                        <div class="calc-quick-shares">
+                            <button type="button" class="quick-share-btn" onclick="setQuickShares(100)">100股</button>
+                            <button type="button" class="quick-share-btn" onclick="setQuickShares(1000)">1000股
+                                (1張)</button>
+                            <button type="button" class="quick-share-btn" onclick="setQuickShares(2000)">2000股
+                                (2張)</button>
+                        </div>
+                    </div>
+                    <input type="number" id="calcShares" step="1" inputmode="numeric" pattern="[0-9]*"
+                        oninput="onCalcInputChange()">
+                </div>
+                <div class="calc-field-group" style="grid-column: span 2;">
+                    <label for="calcDiscount">券商手續費折數</label>
+                    <select id="calcDiscount" onchange="onCalcInputChange()">
+                        <option value="0.6">6 折 (常見電子單)</option>
+                        <option value="0.28">2.8 折 (低折扣券商)</option>
+                        <option value="0.2">2 折 (超低折扣券商)</option>
+                        <option value="1.0">全額 (不打折 10折)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="calc-details-box">
+                <div class="calc-details-row">
+                    <span>買入總代價 (含費):</span>
+                    <strong id="calcBuyTotalCost">$0</strong>
+                </div>
+                <div class="calc-details-row">
+                    <span>賣出扣費後實收:</span>
+                    <strong id="calcSellNetIncome">$0</strong>
+                </div>
+                <div class="calc-details-row">
+                    <span>手續費 (買+賣):</span>
+                    <span id="calcFeesDetail">$0 + $0</span>
+                </div>
+                <div class="calc-details-row">
+                    <span>證交稅 (<span id="calcTaxRateLabel">0.3%</span>):</span>
+                    <span id="calcTaxDetail">$0</span>
+                </div>
             </div>
         </div>
     </div>
@@ -1262,7 +1542,7 @@
                 // 現價標籤顏色修復：拿掉原本的 && item.type !== 'current'
                 const isUpLabel = item.sortKey > 0;
 
-                tableHtml += `<tr ${rowClass}>
+                tableHtml += `<tr ${rowClass} onclick="openCalcModal(${index}, ${item.price})" style="cursor:pointer;" title="點擊進行損益試算">
                 <td><span class="drop-percent ${isUpLabel ? 'up-label' : ''}">${item.label}</span></td>
                 <td class="target-price">${formatPrice(item.price, isETF)}</td>
                 <td class="strategy-cell">${item.strategy}</td>
@@ -1316,6 +1596,128 @@
             const indicator = document.getElementById('globalPageIndicator');
             if (stockList.length === 0) indicator.innerText = '0/0';
             else indicator.innerText = `${currentSlideIndex + 1}/${stockList.length}`;
+        }
+
+        let calcCurrentStockIndex = 0;
+
+        function handleCalcOverlayClick(e) {
+            if (e.target.id === 'calcModal') toggleCalcModal(false);
+        }
+
+        function toggleCalcModal(show) {
+            const modal = document.getElementById('calcModal');
+            if (show) modal.classList.add('active');
+            else modal.classList.remove('active');
+        }
+
+        function openCalcModalDefault() {
+            if (stockList.length === 0) return;
+            openCalcModal(currentSlideIndex || 0, null);
+        }
+
+        function openCalcModal(stockIndex, targetSellPrice) {
+            if (stockIndex < 0 || stockIndex >= stockList.length) return;
+            calcCurrentStockIndex = stockIndex;
+            const stock = stockList[stockIndex];
+            const isETF = stock.symbol.startsWith('00');
+
+            document.getElementById('calcStockTitle').innerText = stock.name;
+            document.getElementById('calcStockBadge').innerText = `${stock.symbol} (${isETF ? 'ETF稅 0.1%' : '個股稅 0.3%'})`;
+            document.getElementById('calcTaxRateLabel').innerText = isETF ? 'ETF 0.1%' : '個股 0.3%';
+
+            // 抓取昨收價
+            const prevCloseText = document.getElementById(`prev-${stockIndex}`)?.innerText;
+            const prevClose = parseFloat(prevCloseText) || runtimeTechnicalCache[stock.symbol]?.currentPrice || 100;
+            const currentPrice = runtimeTechnicalCache[stock.symbol]?.currentPrice || prevClose;
+
+            const buyPriceInput = document.getElementById('calcBuyPrice');
+            const sellPriceInput = document.getElementById('calcSellPrice');
+            const sharesInput = document.getElementById('calcShares');
+            const discountSelect = document.getElementById('calcDiscount');
+
+            buyPriceInput.value = prevClose;
+            sellPriceInput.value = targetSellPrice !== null && targetSellPrice !== undefined ? targetSellPrice : currentPrice;
+
+            sharesInput.value = localStorage.getItem('calc_user_shares') || 100;
+            discountSelect.value = localStorage.getItem('calc_user_discount') || '0.6';
+
+            recalculateProfit();
+            toggleCalcModal(true);
+        }
+
+        function setQuickShares(shares) {
+            document.getElementById('calcShares').value = shares;
+            onCalcInputChange();
+        }
+
+        function onCalcInputChange() {
+            const sharesVal = document.getElementById('calcShares').value;
+            const discountVal = document.getElementById('calcDiscount').value;
+            if (sharesVal) localStorage.setItem('calc_user_shares', sharesVal);
+            if (discountVal) localStorage.setItem('calc_user_discount', discountVal);
+
+            recalculateProfit();
+        }
+
+        function recalculateProfit() {
+            const stock = stockList[calcCurrentStockIndex];
+            if (!stock) return;
+            const isETF = stock.symbol.startsWith('00');
+
+            const buyPrice = parseFloat(document.getElementById('calcBuyPrice').value) || 0;
+            const sellPrice = parseFloat(document.getElementById('calcSellPrice').value) || 0;
+            const shares = parseInt(document.getElementById('calcShares').value, 10) || 0;
+            const feeDiscount = parseFloat(document.getElementById('calcDiscount').value) || 0.6;
+
+            if (buyPrice <= 0 || sellPrice <= 0 || shares <= 0) {
+                document.getElementById('calcNetProfit').innerText = '$0';
+                document.getElementById('calcNetProfit').className = 'calc-hero-profit price-flat';
+                document.getElementById('calcRoi').innerText = '+0.00%';
+                document.getElementById('calcRoi').className = 'calc-hero-roi price-flat';
+                document.getElementById('calcBreakEven').innerText = '保本賣價: -- 元';
+                return;
+            }
+
+            const buyAmount = buyPrice * shares;
+            const buyFee = Math.max(1, Math.floor(buyAmount * 0.001425 * feeDiscount));
+            const buyTotalCost = buyAmount + buyFee;
+
+            const sellAmount = sellPrice * shares;
+            const sellFee = Math.max(1, Math.floor(sellAmount * 0.001425 * feeDiscount));
+            const taxRate = isETF ? 0.001 : 0.003;
+            const sellTax = Math.floor(sellAmount * taxRate);
+            const sellNetIncome = sellAmount - sellFee - sellTax;
+
+            const netProfit = sellNetIncome - buyTotalCost;
+            const roi = (netProfit / buyTotalCost) * 100;
+
+            const breakEvenRaw = buyTotalCost / (shares * (1 - 0.001425 * feeDiscount - taxRate));
+            const breakEvenPrice = getTickPrice(breakEvenRaw, isETF);
+
+            const profitEl = document.getElementById('calcNetProfit');
+            const roiEl = document.getElementById('calcRoi');
+
+            const sign = netProfit > 0 ? '+' : '';
+            profitEl.innerText = `${sign}$${netProfit.toLocaleString('en-US')}`;
+            roiEl.innerText = `${sign}${roi.toFixed(2)}%`;
+
+            if (netProfit > 0) {
+                profitEl.className = 'calc-hero-profit price-up';
+                roiEl.className = 'calc-hero-roi price-up';
+            } else if (netProfit < 0) {
+                profitEl.className = 'calc-hero-profit price-down';
+                roiEl.className = 'calc-hero-roi price-down';
+            } else {
+                profitEl.className = 'calc-hero-profit price-flat';
+                roiEl.className = 'calc-hero-roi price-flat';
+            }
+
+            document.getElementById('calcBreakEven').innerText = `保本賣價: ${formatPrice(breakEvenPrice, isETF)} 元`;
+
+            document.getElementById('calcBuyTotalCost').innerText = `$${Math.round(buyTotalCost).toLocaleString('en-US')}`;
+            document.getElementById('calcSellNetIncome').innerText = `$${Math.round(sellNetIncome).toLocaleString('en-US')}`;
+            document.getElementById('calcFeesDetail').innerText = `$${buyFee} + $${sellFee}`;
+            document.getElementById('calcTaxDetail').innerText = `$${sellTax}`;
         }
 
         let touchStartX = 0;
