@@ -628,14 +628,31 @@
                 overflow-y: auto;
                 border: 1px solid var(--border-color);
                 border-radius: 0.375rem;
+                -webkit-overflow-scrolling: touch;
             }
 
             .manage-item {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 0.6rem 0.75rem;
+                padding: 0.65rem 0.75rem;
                 border-bottom: 1px solid var(--border-color);
+                user-select: none;
+                -webkit-user-select: none;
+                touch-action: none;
+                cursor: grab;
+                transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+            }
+
+            .manage-item.dragging-row {
+                opacity: 0.45;
+                background-color: rgba(255, 255, 255, 0.1);
+                transform: scale(0.98);
+            }
+
+            .manage-item.drop-target-row {
+                border-top: 2px solid var(--price-down) !important;
+                background-color: rgba(67, 172, 158, 0.15);
             }
 
             .manage-item:last-child {
@@ -1357,6 +1374,9 @@
         }
 
         let draggedIndex = null;
+        let touchDragIndex = null;
+        let touchTargetIndex = null;
+        let activeTouchItem = null;
 
         function handleDragStart(e, index) {
             draggedIndex = index;
@@ -1376,6 +1396,58 @@
             draggedIndex = null;
             saveToStorage();
             renderManageList();
+        }
+
+        function handleTouchStart(e, index) {
+            if (e.target.closest('.action-btn')) return;
+
+            touchDragIndex = index;
+            touchTargetIndex = index;
+            activeTouchItem = e.currentTarget;
+            if (activeTouchItem) activeTouchItem.classList.add('dragging-row');
+        }
+
+        function handleTouchMove(e) {
+            if (touchDragIndex === null) return;
+            e.preventDefault();
+
+            const touch = e.touches[0];
+            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (!targetEl) return;
+
+            const manageItem = targetEl.closest('.manage-item');
+            if (manageItem && manageItem.dataset.index !== undefined) {
+                const newIndex = parseInt(manageItem.dataset.index, 10);
+                if (!isNaN(newIndex) && newIndex !== touchTargetIndex) {
+                    touchTargetIndex = newIndex;
+                    document.querySelectorAll('.manage-item').forEach((el) => {
+                        const idx = parseInt(el.dataset.index, 10);
+                        if (idx === newIndex && idx !== touchDragIndex) {
+                            el.classList.add('drop-target-row');
+                        } else {
+                            el.classList.remove('drop-target-row');
+                        }
+                    });
+                }
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (touchDragIndex === null) return;
+
+            if (activeTouchItem) activeTouchItem.classList.remove('dragging-row');
+            document.querySelectorAll('.manage-item').forEach(el => el.classList.remove('drop-target-row'));
+
+            if (touchTargetIndex !== null && touchTargetIndex !== touchDragIndex) {
+                const movedItem = stockList.splice(touchDragIndex, 1)[0];
+                stockList.splice(touchTargetIndex, 0, movedItem);
+                saveToStorage();
+                renderManageList();
+            }
+
+            touchDragIndex = null;
+            touchTargetIndex = null;
+            activeTouchItem = null;
         }
 
         function toggleQuickPickerModal(show) {
@@ -1434,9 +1506,15 @@
                 return;
             }
             container.innerHTML = stockList.map((item, index) => `
-            <div class="manage-item" draggable="true" ondragstart="handleDragStart(event, ${index})" ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${index})">
-                <div style="display:flex; align-items:center; gap:0.4rem; flex:1; min-width:0;">
-                    <span class="drag-handle" title="拖曳排序" style="cursor:grab; color:var(--text-secondary); opacity:0.5; display:flex; align-items:center; padding:2px;">
+            <div class="manage-item" data-index="${index}" draggable="true"
+                 ondragstart="handleDragStart(event, ${index})"
+                 ondragover="handleDragOver(event)"
+                 ondrop="handleDrop(event, ${index})"
+                 ontouchstart="handleTouchStart(event, ${index})"
+                 ontouchmove="handleTouchMove(event)"
+                 ontouchend="handleTouchEnd(event)">
+                <div style="display:flex; align-items:center; gap:0.4rem; flex:1; min-width:0; pointer-events:none;">
+                    <span class="drag-handle" title="拖曳整列排序" style="color:var(--text-secondary); opacity:0.5; display:flex; align-items:center; padding:2px;">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
                     </span>
                     <div class="manage-info" style="min-width:0;">
@@ -1447,11 +1525,11 @@
                         <span class="manage-name">${item.name}</span>
                     </div>
                 </div>
-                <div class="manage-actions">
-                    <button class="action-btn" onclick="editStockName(${index})" title="編輯名稱">
+                <div class="manage-actions" style="pointer-events:auto;">
+                    <button class="action-btn" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation(); editStockName(${index})" title="編輯名稱">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     </button>
-                    <button class="action-btn del" onclick="deleteStock(${index})" title="刪除股票">
+                    <button class="action-btn del" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation(); deleteStock(${index})" title="刪除股票">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                     </button>
                 </div>
