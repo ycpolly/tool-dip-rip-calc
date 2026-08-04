@@ -22,7 +22,7 @@
             --border-dark: #454d57;
 
             --primary-color: #eee;
-            --ma-color: #b5a496;
+            --accent-gold: #b5a496;
             --price-up: #d76360;
             --price-down: #43ac9e;
 
@@ -518,15 +518,20 @@
 
             .add-btn-full {
                 flex: 0 0 auto;
-                background-color: var(--price-down);
+                background-color: #ffffff;
                 color: #101214;
                 border: none;
                 padding: 0 1.2rem;
                 border-radius: 0.375rem;
-                font-weight: 600;
+                font-weight: 700;
                 cursor: pointer;
                 height: 100%;
                 white-space: nowrap;
+                transition: opacity 0.15s ease;
+            }
+
+            .add-btn-full:active {
+                opacity: 0.85;
             }
 
             .setting-switch-group {
@@ -624,7 +629,7 @@
             }
 
             .stock-list-manage {
-                max-height: 13rem;
+                max-height: 276px;
                 overflow-y: auto;
                 border: 1px solid var(--border-color);
                 border-radius: 0.375rem;
@@ -654,14 +659,14 @@
             }
 
             .manage-item.dragging-row {
-                opacity: 0.45;
-                background-color: rgba(255, 255, 255, 0.1);
-                transform: scale(0.98);
+                opacity: 0.35;
+                background: transparent;
+                transform: none;
             }
 
             .manage-item.drop-target-row {
-                border-top: 2px solid var(--price-down) !important;
-                background-color: rgba(67, 172, 158, 0.15);
+                border-top: 2px solid var(--accent-gold) !important;
+                background-color: rgba(181, 164, 150, 0.12);
             }
 
             .manage-item:last-child {
@@ -1159,7 +1164,7 @@
                     <div
                         style="display:flex; justify-content:space-between; align-items:center; height:1.3rem; margin-bottom:0.2rem;">
                         <label for="calcSellPrice" style="margin-bottom:0;">預期賣價</label>
-                        <span id="calcBreakEven" style="font-size:0.75rem; color:var(--ma-color); font-weight:600;">保本:
+                        <span id="calcBreakEven" style="font-size:0.75rem; color:var(--accent-gold); font-weight:600;">保本:
                             --元</span>
                     </div>
                     <input type="number" id="calcSellPrice" step="any" inputmode="decimal"
