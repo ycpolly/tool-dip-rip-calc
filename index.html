@@ -710,12 +710,13 @@
             border-top-right-radius: 1.25rem;
             width: 100%;
             max-width: 30rem;
-            padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom)) 1.25rem;
+            padding: 1rem 1rem calc(2.2rem + env(safe-area-inset-bottom, 0px)) 1rem;
             box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.7);
             transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            max-height: 90vh;
+            max-height: 88vh;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .calc-modal-overlay.active .calc-modal-card {
@@ -1072,9 +1073,9 @@
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <label for="calcShares">交易股數</label>
                         <div class="calc-quick-shares">
+                            <button type="button" class="quick-share-btn" onclick="setQuickShares(10)">10股</button>
                             <button type="button" class="quick-share-btn" onclick="setQuickShares(100)">100股</button>
                             <button type="button" class="quick-share-btn" onclick="setQuickShares(1000)">1000股 (1張)</button>
-                            <button type="button" class="quick-share-btn" onclick="setQuickShares(2000)">2000股 (2張)</button>
                         </div>
                     </div>
                     <input type="number" id="calcShares" step="1" inputmode="numeric" pattern="[0-9]*"
@@ -1083,43 +1084,43 @@
             </div>
 
             <div class="calc-details-box">
-                <div class="calc-details-row" style="font-weight:700; color:var(--text-primary);">
+                <div class="calc-details-row" style="font-size:1rem; font-weight:700; color:var(--text-primary);">
                     <span>買進總成本</span>
                     <strong id="calcBuyTotalCost">$0</strong>
                 </div>
-                <div class="calc-details-row" style="font-size:0.75rem; color:var(--text-secondary); padding-left:0.4rem;">
+                <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary); padding-left:0.4rem;">
                     <span id="calcBuyFormula">0 股 × $0.00</span>
                     <span id="calcBuySubtotal">$0</span>
                 </div>
-                <div class="calc-details-row" style="font-size:0.75rem; color:var(--text-secondary); padding-left:0.4rem;">
+                <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary); padding-left:0.4rem;">
                     <span>買入手續費 (0.1425%)</span>
                     <span id="calcBuyFee">$0</span>
                 </div>
 
-                <div class="calc-details-row" style="font-weight:700; color:var(--text-primary); margin-top:0.4rem;">
+                <div class="calc-details-row" style="font-size:1rem; font-weight:700; color:var(--text-primary); margin-top:0.45rem;">
                     <span>賣出扣費後收益</span>
                     <strong id="calcSellNetIncome">$0</strong>
                 </div>
-                <div class="calc-details-row" style="font-size:0.75rem; color:var(--text-secondary); padding-left:0.4rem;">
+                <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary); padding-left:0.4rem;">
                     <span id="calcSellFormula">0 股 × $0.00</span>
                     <span id="calcSellSubtotal">$0</span>
                 </div>
-                <div class="calc-details-row" style="font-size:0.75rem; color:var(--text-secondary); padding-left:0.4rem;">
+                <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary); padding-left:0.4rem;">
                     <span>賣出手續費 (0.1425%)</span>
                     <span id="calcSellFee">-$0</span>
                 </div>
-                <div class="calc-details-row" style="font-size:0.75rem; color:var(--text-secondary); padding-left:0.4rem;">
+                <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary); padding-left:0.4rem;">
                     <span id="calcTaxLabel">個股證交稅 (0.3%)</span>
                     <span id="calcSellTax">-$0</span>
                 </div>
 
-                <div style="border-top:1px dashed var(--border-color); margin:0.3rem 0;"></div>
+                <div style="border-top:1px dashed var(--border-color); margin:0.35rem 0;"></div>
 
-                <div class="calc-details-row" style="align-items:center;">
-                    <span style="font-size:1rem; font-weight:800; color:var(--text-primary);">實領損益</span>
-                    <strong id="calcRealizedProfit" style="font-size:1.1rem; font-weight:800;">$0</strong>
+                <div class="calc-details-row" style="font-size:1rem; font-weight:800; color:var(--text-primary); align-items:center;">
+                    <span>實領損益</span>
+                    <strong id="calcRealizedProfit" style="font-size:1.15rem; font-weight:800;">$0</strong>
                 </div>
-                <div class="calc-details-row" style="font-size:0.75rem; color:var(--text-secondary);">
+                <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary);">
                     <span>摩擦成本 (買賣手續費 + 證交稅)</span>
                     <span id="calcFrictionCost">$0</span>
                 </div>
@@ -1141,7 +1142,7 @@
         let currentSlideIndex = 0;
         let latestMarketTime = 0;
 
-        const otcPrefixes = ['30', '31', '32', '33', '34', '35', '36', '37', '41', '45', '47', '49', '52', '53', '54', '55', '61', '62', '64', '65', '66', '80', '81', '82', '83', '84', '89'];
+        const otcPrefixes = ['30', '31', '32', '33', '34', '35', '36', '37', '41', '45', '47', '49', '52', '53', '54', '55', '61', '62', '64', '65', '66', '67', '68', '69', '70', '74', '75', '76', '77', '80', '81', '82', '83', '84', '89'];
 
         function getTickPrice(price, isETF) {
             if (isETF) {
@@ -1369,7 +1370,7 @@
             fetchAllData();
         }
 
-        async function fetchSingleStock(stock, index) {
+        async function fetchSingleStock(stock, index, isRetry = false) {
             const isETF = stock.symbol.startsWith('00');
             const tableBox = document.getElementById(`table-box-${index}`);
             try {
@@ -1385,6 +1386,8 @@
                 if (!intradayRes.ok) throw new Error('API 連線失敗');
                 const intradayData = await intradayRes.json();
                 const historyData = await historyRes.json();
+
+                if (!intradayData?.chart?.result?.[0]?.meta) throw new Error('無法讀取行情資料');
 
                 const liveMeta = intradayData.chart.result[0].meta;
                 if (liveMeta.regularMarketTime) {
@@ -1432,6 +1435,19 @@
                 runtimeTechnicalCache[stock.symbol] = { currentPrice, ma5, ma10, ma20, ma60, bias20 };
                 renderCombinedTable(tableBox, previousClose, currentPrice, ma5, ma10, ma20, ma60, bias20, index, isETF);
             } catch (err) {
+                // 自動智慧嘗試切換市場後綴 (.TW <-> .TWO)
+                if (!isRetry) {
+                    const altSymbol = stock.symbol.endsWith('.TW')
+                        ? stock.symbol.replace('.TW', '.TWO')
+                        : stock.symbol.endsWith('.TWO')
+                        ? stock.symbol.replace('.TWO', '.TW')
+                        : null;
+                    if (altSymbol) {
+                        stock.symbol = altSymbol;
+                        saveToStorage();
+                        return fetchSingleStock(stock, index, true);
+                    }
+                }
                 tableBox.innerHTML = `<div class="status-msg" style="color:var(--price-up);">${err.message || '讀取異常'}</div>`;
             }
         }
@@ -1677,7 +1693,7 @@
             buyPriceInput.value = prevClose;
             sellPriceInput.value = targetSellPrice !== null && targetSellPrice !== undefined ? targetSellPrice : currentPrice;
 
-            sharesInput.value = localStorage.getItem('calc_user_shares') || 100;
+            sharesInput.value = localStorage.getItem('calc_user_shares') || 10;
 
             recalculateProfit();
             toggleCalcModal(true);
