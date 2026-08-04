@@ -28,6 +28,27 @@
 
             --row-hover-bg: #262c33;
             --input-bg: #2a3038;
+
+            color-scheme: dark light;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-color: #f4f6f8;
+                --card-bg: #ffffff;
+                --text-primary: #18191a;
+                --text-secondary: #65676b;
+                --border-color: #e4e6eb;
+                --border-dark: #ced0d4;
+
+                --primary-color: #1c1e21;
+                --ma-color: #8c6d58;
+                --price-up: #e44d4a;
+                --price-down: #2bb8a0;
+
+                --row-hover-bg: #f0f2f5;
+                --input-bg: #f5f6f8;
+            }
         }
 
         * {
@@ -287,9 +308,18 @@
             padding-right: 0.4rem;
         }
 
-        .result-table tbody tr:hover td {
-            background-color: var(--row-hover-bg);
-            cursor: pointer;
+        @media (hover: hover) and (pointer: fine) {
+            .result-table tbody tr:hover td {
+                background-color: var(--row-hover-bg);
+                cursor: pointer;
+            }
+            .nav-btn-fat:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+            .close-price-editable:hover {
+                color: #8bcfff;
+                border-bottom-color: #8bcfff;
+            }
         }
 
         .drop-percent {
@@ -323,14 +353,28 @@
             font-size: 0.8rem;
         }
 
-        .result-table tr.current-price-row-up {
-            border: 0.5px solid var(--price-up);
-            outline: 0.5px solid var(--price-up);
+        .result-table tr.current-price-row-up td {
+            box-shadow: inset 0 1px 0 var(--price-up), inset 0 -1px 0 var(--price-up);
         }
 
-        .result-table tr.current-price-row-down {
-            border: 0.5px solid var(--price-down);
-            outline: 0.5px solid var(--price-down);
+        .result-table tr.current-price-row-up td:first-child {
+            box-shadow: inset 1px 1px 0 var(--price-up), inset 0 -1px 0 var(--price-up);
+        }
+
+        .result-table tr.current-price-row-up td:last-child {
+            box-shadow: inset -1px 1px 0 var(--price-up), inset 0 -1px 0 var(--price-up);
+        }
+
+        .result-table tr.current-price-row-down td {
+            box-shadow: inset 0 1px 0 var(--price-down), inset 0 -1px 0 var(--price-down);
+        }
+
+        .result-table tr.current-price-row-down td:first-child {
+            box-shadow: inset 1px 1px 0 var(--price-down), inset 0 -1px 0 var(--price-down);
+        }
+
+        .result-table tr.current-price-row-down td:last-child {
+            box-shadow: inset -1px 1px 0 var(--price-down), inset 0 -1px 0 var(--price-down);
         }
 
         .result-table tr.current-price-row-flat td,
@@ -1014,11 +1058,13 @@
     <div class="calc-modal-overlay" id="calcModal" onclick="handleCalcOverlayClick(event)">
         <div class="calc-modal-card" onclick="event.stopPropagation()">
             <div class="calc-header">
-                <div>
-                    <h3 id="calcStockTitle" style="display:inline-block; margin-right:0.4rem;">損益試算</h3>
-                    <span class="calc-stock-badge" id="calcStockBadge">--</span>
+                <div style="display:flex; flex-direction:column; gap:0.25rem; min-width:0;">
+                    <h3 id="calcStockTitle" style="font-size:1.15rem; font-weight:700; color:var(--text-primary);">損益試算</h3>
+                    <div>
+                        <span class="calc-stock-badge" id="calcStockBadge">--</span>
+                    </div>
                 </div>
-                <button class="nav-btn-fat" style="font-size:1.2rem; width:36px; height:36px;"
+                <button class="nav-btn-fat" style="font-size:1.2rem; width:36px; height:36px; flex-shrink:0; margin-left:0.5rem;"
                     onclick="toggleCalcModal(false)">✕</button>
             </div>
 
@@ -1031,11 +1077,11 @@
 
             <div class="calc-grid-form">
                 <div class="calc-field-group">
-                    <label for="calcBuyPrice">買入價格 (昨收)</label>
+                    <label for="calcBuyPrice">買入價格</label>
                     <input type="number" id="calcBuyPrice" step="any" inputmode="decimal" oninput="onCalcInputChange()">
                 </div>
                 <div class="calc-field-group">
-                    <label for="calcSellPrice">預期賣價 (目標)</label>
+                    <label for="calcSellPrice">預期賣價</label>
                     <input type="number" id="calcSellPrice" step="any" inputmode="decimal"
                         oninput="onCalcInputChange()">
                 </div>
@@ -1044,42 +1090,37 @@
                         <label for="calcShares">交易股數</label>
                         <div class="calc-quick-shares">
                             <button type="button" class="quick-share-btn" onclick="setQuickShares(100)">100股</button>
-                            <button type="button" class="quick-share-btn" onclick="setQuickShares(1000)">1000股
-                                (1張)</button>
-                            <button type="button" class="quick-share-btn" onclick="setQuickShares(2000)">2000股
-                                (2張)</button>
+                            <button type="button" class="quick-share-btn" onclick="setQuickShares(1000)">1000股 (1張)</button>
+                            <button type="button" class="quick-share-btn" onclick="setQuickShares(2000)">2000股 (2張)</button>
                         </div>
                     </div>
                     <input type="number" id="calcShares" step="1" inputmode="numeric" pattern="[0-9]*"
                         oninput="onCalcInputChange()">
                 </div>
-                <div class="calc-field-group" style="grid-column: span 2;">
-                    <label for="calcDiscount">券商手續費折數</label>
-                    <select id="calcDiscount" onchange="onCalcInputChange()">
-                        <option value="0.6">6 折 (常見電子單)</option>
-                        <option value="0.28">2.8 折 (低折扣券商)</option>
-                        <option value="0.2">2 折 (超低折扣券商)</option>
-                        <option value="1.0">全額 (不打折 10折)</option>
-                    </select>
-                </div>
             </div>
 
             <div class="calc-details-box">
                 <div class="calc-details-row">
-                    <span>買入總代價 (含費):</span>
+                    <div>
+                        <span>買進總成本</span>
+                        <div style="font-size:0.75rem; color:var(--text-secondary);">股數 × 價格 + 手續費</div>
+                    </div>
                     <strong id="calcBuyTotalCost">$0</strong>
                 </div>
-                <div class="calc-details-row">
-                    <span>賣出扣費後實收:</span>
+                <div class="calc-details-row" style="margin-top:0.3rem;">
+                    <div>
+                        <span>賣出總收益</span>
+                        <div style="font-size:0.75rem; color:var(--text-secondary);">股數 × 價格 - 手續費 - 證交稅</div>
+                    </div>
                     <strong id="calcSellNetIncome">$0</strong>
                 </div>
-                <div class="calc-details-row">
-                    <span>手續費 (買+賣):</span>
-                    <span id="calcFeesDetail">$0 + $0</span>
+                <div class="calc-details-row" style="border-top:1px dashed var(--border-color); padding-top:0.4rem; margin-top:0.4rem; align-items:center;">
+                    <span style="font-weight:700; color:var(--text-primary);">實現損益</span>
+                    <strong id="calcRealizedProfit" style="font-size:1.05rem;">$0</strong>
                 </div>
-                <div class="calc-details-row">
-                    <span>證交稅 (<span id="calcTaxRateLabel">0.3%</span>):</span>
-                    <span id="calcTaxDetail">$0</span>
+                <div class="calc-details-row" style="font-size:0.75rem; opacity:0.85; margin-top:0.2rem;">
+                    <span>手續費: <span id="calcFeesDetail">$0 + $0</span></span>
+                    <span>證交稅 (<span id="calcTaxRateLabel">0.3%</span>): <span id="calcTaxDetail">$0</span></span>
                 </div>
             </div>
         </div>
@@ -1633,13 +1674,11 @@
             const buyPriceInput = document.getElementById('calcBuyPrice');
             const sellPriceInput = document.getElementById('calcSellPrice');
             const sharesInput = document.getElementById('calcShares');
-            const discountSelect = document.getElementById('calcDiscount');
 
             buyPriceInput.value = prevClose;
             sellPriceInput.value = targetSellPrice !== null && targetSellPrice !== undefined ? targetSellPrice : currentPrice;
 
             sharesInput.value = localStorage.getItem('calc_user_shares') || 100;
-            discountSelect.value = localStorage.getItem('calc_user_discount') || '0.6';
 
             recalculateProfit();
             toggleCalcModal(true);
@@ -1652,9 +1691,7 @@
 
         function onCalcInputChange() {
             const sharesVal = document.getElementById('calcShares').value;
-            const discountVal = document.getElementById('calcDiscount').value;
             if (sharesVal) localStorage.setItem('calc_user_shares', sharesVal);
-            if (discountVal) localStorage.setItem('calc_user_discount', discountVal);
 
             recalculateProfit();
         }
@@ -1667,7 +1704,7 @@
             const buyPrice = parseFloat(document.getElementById('calcBuyPrice').value) || 0;
             const sellPrice = parseFloat(document.getElementById('calcSellPrice').value) || 0;
             const shares = parseInt(document.getElementById('calcShares').value, 10) || 0;
-            const feeDiscount = parseFloat(document.getElementById('calcDiscount').value) || 0.6;
+            const feeDiscount = 1.0; // 手續費全額 (10折)，最低1元
 
             if (buyPrice <= 0 || sellPrice <= 0 || shares <= 0) {
                 document.getElementById('calcNetProfit').innerText = '$0';
@@ -1675,6 +1712,9 @@
                 document.getElementById('calcRoi').innerText = '+0.00%';
                 document.getElementById('calcRoi').className = 'calc-hero-roi price-flat';
                 document.getElementById('calcBreakEven').innerText = '保本賣價: -- 元';
+                document.getElementById('calcBuyTotalCost').innerText = '$0';
+                document.getElementById('calcSellNetIncome').innerText = '$0';
+                document.getElementById('calcRealizedProfit').innerText = '$0';
                 return;
             }
 
@@ -1696,20 +1736,26 @@
 
             const profitEl = document.getElementById('calcNetProfit');
             const roiEl = document.getElementById('calcRoi');
+            const realizedEl = document.getElementById('calcRealizedProfit');
 
             const sign = netProfit > 0 ? '+' : '';
-            profitEl.innerText = `${sign}$${netProfit.toLocaleString('en-US')}`;
+            const profitText = `${sign}$${netProfit.toLocaleString('en-US')}`;
+            profitEl.innerText = profitText;
+            realizedEl.innerText = profitText;
             roiEl.innerText = `${sign}${roi.toFixed(2)}%`;
 
             if (netProfit > 0) {
                 profitEl.className = 'calc-hero-profit price-up';
                 roiEl.className = 'calc-hero-roi price-up';
+                realizedEl.className = 'price-up';
             } else if (netProfit < 0) {
                 profitEl.className = 'calc-hero-profit price-down';
                 roiEl.className = 'calc-hero-roi price-down';
+                realizedEl.className = 'price-down';
             } else {
                 profitEl.className = 'calc-hero-profit price-flat';
                 roiEl.className = 'calc-hero-roi price-flat';
+                realizedEl.className = 'price-flat';
             }
 
             document.getElementById('calcBreakEven').innerText = `保本賣價: ${formatPrice(breakEvenPrice, isETF)} 元`;
