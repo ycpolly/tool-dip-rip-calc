@@ -599,7 +599,7 @@
             }
 
             input:checked+.slider {
-                background-color: var(--primary-color);
+                background-color: var(--price-down);
             }
 
             input:checked+.slider:before {
@@ -607,7 +607,7 @@
             }
 
             .stock-list-manage {
-                max-height: 12rem;
+                max-height: 11.2rem;
                 overflow-y: auto;
                 border: 1px solid var(--border-color);
                 border-radius: 0.375rem;
@@ -1093,14 +1093,14 @@
                 <div class="calc-field-group">
                     <div style="display:flex; justify-content:space-between; align-items:center; height:1.3rem; margin-bottom:0.2rem;">
                         <label for="calcBuyPrice" style="margin-bottom:0;">買入價格</label>
-                        <span id="calcBreakEven"
-                            style="font-size:0.75rem; color:var(--price-down); font-weight:600;">保本: --元</span>
                     </div>
                     <input type="number" id="calcBuyPrice" step="any" inputmode="decimal" oninput="onCalcInputChange()">
                 </div>
                 <div class="calc-field-group">
                     <div style="display:flex; justify-content:space-between; align-items:center; height:1.3rem; margin-bottom:0.2rem;">
                         <label for="calcSellPrice" style="margin-bottom:0;">預期賣價</label>
+                        <span id="calcBreakEven"
+                            style="font-size:0.75rem; color:var(--price-down); font-weight:600;">保本: --元</span>
                     </div>
                     <input type="number" id="calcSellPrice" step="any" inputmode="decimal"
                         oninput="onCalcInputChange()">
@@ -1151,10 +1151,12 @@
 
                 <div style="border-top:1px dashed var(--border-color); margin:0.35rem 0;"></div>
 
-                <div class="calc-details-row"
-                    style="font-size:1rem; font-weight:800; color:var(--text-primary); align-items:center;">
+                <div class="calc-details-row" style="font-size:1rem; font-weight:800; color:var(--text-primary); align-items:center;">
                     <span>實領損益</span>
-                    <strong id="calcRealizedProfit" style="font-size:1.15rem; font-weight:800;">$0</strong>
+                    <strong id="calcRealizedProfit" style="font-size:1.15rem; font-weight:800;">
+                        <span id="calcRoiPrefix" style="font-size:0.85rem; font-weight:600; margin-right:0.3rem; opacity:0.85;">(+0.00%)</span>
+                        <span id="calcRealizedAmount">$0</span>
+                    </strong>
                 </div>
                 <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary);">
                     <span>摩擦成本 (買賣手續費 + 證交稅)</span>
@@ -1355,6 +1357,18 @@
             toggleQuickPickerModal(false);
         }
 
+        function editStockName(index) {
+            const stock = stockList[index];
+            const newName = prompt(`[編輯股票名稱] 請輸入 ${stock.symbol} 的顯示名稱:`, stock.name);
+            if (newName === null) return;
+            const trimmed = newName.trim();
+            if (!trimmed) return alert('名稱不可為空！');
+            stockList[index].name = trimmed;
+            saveToStorage();
+            renderManageList();
+            initDashboard();
+        }
+
         function renderManageList() {
             const container = document.getElementById('manageList');
             if (stockList.length === 0) {
@@ -1364,7 +1378,10 @@
             container.innerHTML = stockList.map((item, index) => `
             <div class="manage-item">
                 <div class="manage-info">
-                    <span class="manage-symbol">${item.symbol}</span>
+                    <div style="display:flex; align-items:baseline; gap:0.35rem;">
+                        <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:700;">#${index + 1}</span>
+                        <span class="manage-symbol">${item.symbol}</span>
+                    </div>
                     <span class="manage-name">${item.name}</span>
                 </div>
                 <div class="manage-actions">
@@ -1815,7 +1832,8 @@
                 document.getElementById('calcSellSubtotal').innerText = '$0';
                 document.getElementById('calcSellFee').innerText = '-$0';
                 document.getElementById('calcSellTax').innerText = '-$0';
-                document.getElementById('calcRealizedProfit').innerText = '$0';
+                if (document.getElementById('calcRoiPrefix')) document.getElementById('calcRoiPrefix').innerText = '(+0.00%)';
+                if (document.getElementById('calcRealizedAmount')) document.getElementById('calcRealizedAmount').innerText = '$0';
                 document.getElementById('calcFrictionCost').innerText = '$0';
                 return;
             }
@@ -1837,18 +1855,21 @@
             const breakEvenRaw = buyTotalCost / (shares * (1 - 0.001425 * feeDiscount - taxRate));
             const breakEvenPrice = getTickPrice(breakEvenRaw, isETF);
 
-            const realizedEl = document.getElementById('calcRealizedProfit');
+            const profitEl = document.getElementById('calcRealizedProfit');
+            const roiPrefixEl = document.getElementById('calcRoiPrefix');
+            const amountEl = document.getElementById('calcRealizedAmount');
 
             const sign = netProfit > 0 ? '+' : '';
             const profitText = `${sign}$${netProfit.toLocaleString('en-US')}`;
-            realizedEl.innerText = `${profitText} (${sign}${roi.toFixed(2)}%)`;
+            if (roiPrefixEl) roiPrefixEl.innerText = `(${sign}${roi.toFixed(2)}%)`;
+            if (amountEl) amountEl.innerText = profitText;
 
             if (netProfit > 0) {
-                realizedEl.className = 'invoice-grand-value price-up';
+                profitEl.className = 'price-up';
             } else if (netProfit < 0) {
-                realizedEl.className = 'invoice-grand-value price-down';
+                profitEl.className = 'price-down';
             } else {
-                realizedEl.className = 'invoice-grand-value price-flat';
+                profitEl.className = 'price-flat';
             }
 
             document.getElementById('calcBreakEven').innerText = `保本: ${formatPrice(breakEvenPrice, isETF)}元`;
