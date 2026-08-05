@@ -998,6 +998,10 @@
             }
 
             @media (max-width: 767px) {
+                html {
+                    font-size: 18px;
+                }
+
                 body {
                     padding: 0.75rem 0.75rem 0 0.75rem;
                     height: 100vh;
@@ -1024,8 +1028,9 @@
 
                 .card-sticky-top {
                     flex: 0 0 auto;
-                    position: static;
-                    box-shadow: none;
+                    position: relative;
+                    z-index: 20;
+                    box-shadow: 0 6px 12px -6px rgba(0, 0, 0, 0.6);
                 }
 
                 .table-scroll-box {
@@ -1961,9 +1966,11 @@
             const currentRow = targetEl.querySelector('.current-price-row-up, .current-price-row-down, .current-price-row-flat');
             if (!currentRow) return;
 
-            const anchorRow = currentRow.previousElementSibling || currentRow;
+            const prev1 = currentRow.previousElementSibling;
+            const prev2 = prev1 ? prev1.previousElementSibling : null;
+            const anchorRow = prev2 || prev1 || currentRow;
             targetEl.scrollTo({
-                top: anchorRow.offsetTop - 0,
+                top: anchorRow.offsetTop,
                 behavior: 'smooth'
             });
         }
