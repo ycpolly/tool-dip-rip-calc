@@ -69,6 +69,18 @@
                 padding: 0 0.25rem;
             }
 
+            .version-badge {
+                font-size: 0.75rem;
+                color: var(--text-secondary);
+                font-weight: 600;
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid var(--border-color);
+                padding: 0.15rem 0.45rem;
+                border-radius: 0.25rem;
+                font-variant-numeric: tabular-nums;
+                flex-shrink: 0;
+            }
+
             .global-timestamp {
                 font-size: 0.8rem;
                 color: var(--text-secondary);
@@ -960,6 +972,11 @@
                 .stock-card {
                     margin: 0;
                     max-width: 100%;
+                    overflow: visible;
+                }
+
+                .table-scroll-box {
+                    padding-top: 0.75rem;
                 }
 
                 .floating-bar {
@@ -1031,6 +1048,7 @@
 
     <div class="global-top-bar">
         <div class="global-timestamp" id="globalTimestamp">數據載入中...</div>
+        <div class="version-badge">2026-08-05 v24</div>
     </div>
 
     <div class="viewport-wrapper">
@@ -1238,7 +1256,7 @@
         const defaultStocks = [
             { symbol: '2330.TW', name: '台積電' },
             { symbol: '0050.TW', name: '台灣50' },
-            { symbol: '00981A.TW', name: '主動統一' }
+            { symbol: '00981A.TW', name: '瑤池金母' }
         ];
 
         let manualPrevCloses = JSON.parse(localStorage.getItem('manual_prev_closes')) || {};
@@ -1454,7 +1472,10 @@
             let symbol = '';
             let finalName = '';
 
-            if (/[\u4e00-\u9fa5]/.test(fullText)) {
+            const parts = fullText.split(/\s+/);
+            const hasChinese = /[\u4e00-\u9fa5]/.test(fullText);
+
+            if (hasChinese) {
                 if (addBtn) addBtn.innerText = '搜尋中...';
                 const match = await searchStockByChineseName(fullText);
                 if (addBtn) addBtn.innerText = '新增';
@@ -1462,7 +1483,6 @@
                 symbol = match.symbol;
                 finalName = match.name;
             } else {
-                const parts = fullText.split(/\s+/);
                 let rawInput = parts[0].toUpperCase();
                 let customName = parts.length > 1 ? parts.slice(1).join(' ') : null;
 
@@ -1484,7 +1504,8 @@
 
             if (stockList.some(item => item.symbol === symbol)) return alert('此股票已在清單中！');
 
-            stockList.unshift({ symbol, name: finalName });
+            const isCustom = parts.length > 1 || hasChinese;
+            stockList.unshift({ symbol, name: finalName, isCustomName: isCustom });
             saveToStorage();
             symbolInput.value = '';
             renderManageList();
@@ -1651,6 +1672,7 @@
             const trimmed = newName.trim();
             if (!trimmed) return alert('名稱不可為空！');
             stockList[index].name = trimmed;
+            stockList[index].isCustomName = true;
             saveToStorage();
             renderManageList();
             initDashboard();
@@ -1786,7 +1808,7 @@
                 if (!currentPrice || !previousClose) throw new Error('暫無即時報價');
 
                 let apiName = liveMeta.shortName;
-                if (apiName && stock.name === stock.symbol.split('.')[0]) {
+                if (!stock.isCustomName && apiName && stock.name === stock.symbol.split('.')[0]) {
                     stock.name = apiName;
                     saveToStorage();
                 }
