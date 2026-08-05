@@ -113,7 +113,6 @@
                 border: 1px solid var(--border-color);
                 margin: 0 auto;
                 position: relative;
-                overflow: hidden;
             }
 
             .card-sticky-top {
@@ -122,7 +121,7 @@
                 background-color: var(--card-bg);
                 z-index: 30;
                 margin: -1.25rem -1.25rem 0 -1.25rem;
-                padding: 1.25rem 1.25rem 0.5rem 1.25rem;
+                padding: 1rem 1.25rem 0.5rem 1.25rem;
                 border-bottom: 1px solid var(--border-color);
                 border-top-left-radius: 0.75rem;
                 border-top-right-radius: 0.75rem;
@@ -254,6 +253,7 @@
             .table-scroll-box {
                 position: relative;
                 z-index: 15;
+                padding-top: 1.5rem;
                 padding-bottom: 4rem;
                 touch-action: pan-y;
                 overscroll-behavior-x: none;
@@ -1017,6 +1017,7 @@
                     touch-action: pan-y;
                     overscroll-behavior-x: none;
                     -webkit-overflow-scrolling: touch;
+                    padding-top: 0.5rem;
                     padding-bottom: 4.5rem;
                 }
 
@@ -1120,7 +1121,7 @@
             </div>
             <div class="form-group-single">
                 <input type="text" id="newSymbol" placeholder="輸入名稱或代號 (例: 萬潤、富邦金、2330)" autocomplete="off"
-                    autocapitalize="off" onkeydown="if(event.key==='Enter') addStock()">
+                    autocapitalize="off" onkeydown="if(event.key==='Enter'){ event.preventDefault(); addStock(); }">
                 <button class="add-btn-full" onclick="addStock()">新增</button>
             </div>
             <div class="stock-list-manage" id="manageList"></div>
@@ -1131,7 +1132,7 @@
             </div>
 
             <div class="setting-switch-group">
-                <label for="rangeSwitch">解鎖深水區 (±10%)</label>
+                <label for="rangeSwitch">開啟精簡模式 (僅顯示 ±5%)</label>
                 <label class="switch-label">
                     <input type="checkbox" id="rangeSwitch" onchange="handleRangeSwitchChange(this)">
                     <span class="slider"></span>
@@ -1238,13 +1239,13 @@
         const defaultStocks = [
             { symbol: '2330.TW', name: '台積電' },
             { symbol: '0050.TW', name: '台灣50' },
-            { symbol: '00981A.TW', name: '主動統一' }
+            { symbol: '00981A.TW', name: '瑤池金母' }
         ];
 
         let manualPrevCloses = JSON.parse(localStorage.getItem('manual_prev_closes')) || {};
         let runtimeTechnicalCache = {};
         let stockList = JSON.parse(localStorage.getItem('custom_stock_list')) || [...defaultStocks];
-        let isDeepRange = JSON.parse(localStorage.getItem('strategy_deep_range')) || false;
+        let isCompactRange = JSON.parse(localStorage.getItem('strategy_compact_range')) || false;
         let currentSlideIndex = 0;
         let latestMarketTime = 0;
 
@@ -1378,8 +1379,8 @@
             const deepDrop = [5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
             const baseRise = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
             const deepRise = [5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
-            let drops = isDeepRange ? baseDrop.concat(deepDrop) : baseDrop;
-            let rises = isDeepRange ? baseRise.concat(deepRise) : baseRise;
+            let drops = isCompactRange ? baseDrop : baseDrop.concat(deepDrop);
+            let rises = isCompactRange ? baseRise : baseRise.concat(deepRise);
             return { drops, rises };
         }
 
@@ -1389,14 +1390,14 @@
         function handleQuickPickerOverlayClick(e) { if (e.target.id === 'quickPickerModal') toggleQuickPickerModal(false); }
 
         function handleRangeSwitchChange(el) {
-            isDeepRange = el.checked;
-            localStorage.setItem('strategy_deep_range', JSON.stringify(isDeepRange));
+            isCompactRange = el.checked;
+            localStorage.setItem('strategy_compact_range', JSON.stringify(isCompactRange));
         }
 
         function toggleModal(show) {
             const modal = document.getElementById('settingModal');
             if (show) {
-                document.getElementById('rangeSwitch').checked = isDeepRange;
+                document.getElementById('rangeSwitch').checked = isCompactRange;
                 renderManageList();
                 modal.classList.add('active');
             } else {
@@ -1453,8 +1454,10 @@
 
             let symbol = '';
             let finalName = '';
+            const parts = fullText.split(/\s+/);
+            const hasChinese = /[\u4e00-\u9fa5]/.test(fullText);
 
-            if (/[\u4e00-\u9fa5]/.test(fullText)) {
+            if (hasChinese) {
                 if (addBtn) addBtn.innerText = '搜尋中...';
                 const match = await searchStockByChineseName(fullText);
                 if (addBtn) addBtn.innerText = '新增';
@@ -1462,7 +1465,6 @@
                 symbol = match.symbol;
                 finalName = match.name;
             } else {
-                const parts = fullText.split(/\s+/);
                 let rawInput = parts[0].toUpperCase();
                 let customName = parts.length > 1 ? parts.slice(1).join(' ') : null;
 
@@ -1484,7 +1486,8 @@
 
             if (stockList.some(item => item.symbol === symbol)) return alert('此股票已在清單中！');
 
-            stockList.unshift({ symbol, name: finalName });
+            const isCustom = parts.length > 1 || hasChinese;
+            stockList.unshift({ symbol, name: finalName, isCustomName: isCustom });
             saveToStorage();
             symbolInput.value = '';
             renderManageList();
@@ -1651,6 +1654,7 @@
             const trimmed = newName.trim();
             if (!trimmed) return alert('名稱不可為空！');
             stockList[index].name = trimmed;
+            stockList[index].isCustomName = true;
             saveToStorage();
             renderManageList();
             initDashboard();
@@ -1786,7 +1790,7 @@
                 if (!currentPrice || !previousClose) throw new Error('暫無即時報價');
 
                 let apiName = liveMeta.shortName;
-                if (apiName && stock.name === stock.symbol.split('.')[0]) {
+                if (!stock.isCustomName && apiName && stock.name === stock.symbol.split('.')[0]) {
                     stock.name = apiName;
                     saveToStorage();
                 }
@@ -1930,7 +1934,7 @@
             if (window.innerWidth < 768) {
                 setTimeout(() => {
                     scrollToAnchorRow(targetEl);
-                }, 100);
+                }, 150);
             }
         }
 
@@ -1939,11 +1943,16 @@
             const currentRow = targetEl.querySelector('.current-price-row-up, .current-price-row-down, .current-price-row-flat');
             if (!currentRow) return;
 
-            const anchorRow = currentRow.previousElementSibling || currentRow;
-            targetEl.scrollTo({
-                top: anchorRow.offsetTop - 0,
-                behavior: 'smooth'
-            });
+            // 定位至 (現價) 的「上兩條」
+            const prev1 = currentRow.previousElementSibling;
+            const prev2 = prev1 ? prev1.previousElementSibling : null;
+            const anchorRow = prev2 || prev1 || currentRow;
+
+            const cardStickyTop = targetEl.closest('.stock-card')?.querySelector('.card-sticky-top');
+            const headerOffset = cardStickyTop ? cardStickyTop.offsetHeight : 120;
+
+            anchorRow.style.scrollMarginTop = `${headerOffset}px`;
+            anchorRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function moveSlide(direction) {
