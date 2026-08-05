@@ -1046,7 +1046,7 @@
                 .card-sticky-top {
                     flex: 0 0 auto;
                     position: relative;
-                    z-index: 20;
+                    z-index: 30;
                     box-shadow: 0 6px 12px -6px rgba(0, 0, 0, 0.6);
                 }
 
@@ -1690,6 +1690,13 @@
             toggleQuickPickerModal(true);
         }
 
+        function openYahooQuote(symbol, event) {
+            if (event) {
+                event.stopPropagation();
+            }
+            window.open(`https://tw.stock.yahoo.com/quote/${symbol}`, '_blank');
+        }
+
         function jumpToStock(index) {
             currentSlideIndex = index;
             updateSlidePosition();
@@ -1789,7 +1796,7 @@
                         <div class="stock-meta">
                             <span id="title-name-${index}">${stock.name}</span>
                             <span class="stock-id-small">${stock.symbol}</span>
-                            <a href="https://tw.stock.yahoo.com/quote/${stock.symbol}" target="_blank" class="link-icon" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()">🔗</a>
+                            <a href="https://tw.stock.yahoo.com/quote/${stock.symbol}" target="_blank" class="link-icon" onclick="openYahooQuote('${stock.symbol}', event)" ontouchstart="openYahooQuote('${stock.symbol}', event)">🔗</a>
                         </div>
                         <div class="stock-price-large" id="current-price-header-${index}">--</div>
                     </header>
