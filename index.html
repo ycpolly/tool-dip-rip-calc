@@ -183,6 +183,9 @@
                 text-decoration: none;
                 font-size: 1rem;
                 transition: opacity 0.2s;
+                position: relative;
+                z-index: 45;
+                pointer-events: auto;
             }
 
             .link-icon:hover {
@@ -224,23 +227,34 @@
                 color: var(--text-primary);
             }
 
-            .info-bar {
+            .stats-row-3 {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding-bottom: 0.25rem;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid var(--border-color);
+                border-radius: 0.5rem;
+                padding: 0.45rem 0.75rem;
+                margin: 0.5rem 0 0.4rem 0;
             }
 
-            .close-price-display {
-                font-size: 0.95rem;
+            .stat-cell {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                font-size: 0.85rem;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .stat-label {
                 color: var(--text-secondary);
-                position: relative;
-                z-index: 35;
+                font-size: 0.8rem;
+                font-weight: 500;
             }
 
             .close-price-editable {
                 font-weight: 700;
-                font-size: 1.05rem;
+                font-size: 0.9rem;
                 color: var(--primary-color);
                 cursor: pointer;
                 border-bottom: 1px dashed var(--primary-color);
@@ -998,8 +1012,10 @@
             }
 
             @media (max-width: 767px) {
+
+                :root,
                 html {
-                    font-size: 18px;
+                    font-size: 18px !important;
                 }
 
                 body {
@@ -1142,7 +1158,7 @@
                 </button>
             </div>
             <div class="form-group-single">
-                <input type="text" id="newSymbol" placeholder="輸入名稱或代號 (例: 萬潤、富邦金、2330)" autocomplete="off"
+                <input type="text" id="newSymbol" placeholder="輸入名稱或代號 (例: 2330、欣興)" autocomplete="off"
                     autocapitalize="off" onkeydown="if(event.key==='Enter') addStock()">
                 <button class="add-btn-full" onclick="addStock()">新增</button>
             </div>
@@ -1395,6 +1411,15 @@
             if (p < 500) return p.toFixed(1);
             return p.toString();
         };
+
+        function formatVolume(vol) {
+            if (!vol || isNaN(vol)) return '--';
+            if (vol >= 1000) {
+                const sheets = Math.round(vol / 1000);
+                return sheets.toLocaleString() + ' 張';
+            }
+            return vol.toLocaleString() + ' 股';
+        }
 
         function getStrategyPercentages() {
             const baseDrop = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
@@ -1763,12 +1788,23 @@
                         <div class="stock-meta">
                             <span id="title-name-${index}">${stock.name}</span>
                             <span class="stock-id-small">${stock.symbol}</span>
-                            <a href="https://tw.stock.yahoo.com/quote/${stock.symbol}" target="_blank" class="link-icon">🔗</a>
+                            <a href="https://tw.stock.yahoo.com/quote/${stock.symbol}" target="_blank" class="link-icon" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()">🔗</a>
                         </div>
                         <div class="stock-price-large" id="current-price-header-${index}">--</div>
                     </header>
-                    <div class="info-bar">
-                        <div class="close-price-display">昨收價: <span id="prev-${index}" class="close-price-editable" onclick="editPreviousClose('${stock.symbol}', ${index})">--</span></div>
+                    <div class="stats-row-3">
+                        <div class="stat-cell">
+                            <span class="stat-label">昨收 </span>
+                            <span id="prev-${index}" class="stat-val close-price-editable" onclick="editPreviousClose('${stock.symbol}', ${index})">--</span>
+                        </div>
+                        <div class="stat-cell">
+                            <span class="stat-label">最高 </span>
+                            <strong id="high-${index}" class="stat-val" style="color:var(--price-up);">--</strong>
+                        </div>
+                        <div class="stat-cell">
+                            <span class="stat-label">最低 </span>
+                            <strong id="low-${index}" class="stat-val" style="color:var(--price-down);">--</strong>
+                        </div>
                     </div>
                     
                     <div class="fake-table-header">
@@ -1818,6 +1854,27 @@
                     saveToStorage();
                 }
                 document.getElementById(`title-name-${index}`).innerText = stock.name;
+
+                let dayHigh = liveMeta.regularMarketDayHigh || liveMeta.dayHigh;
+                let dayLow = liveMeta.regularMarketDayLow || liveMeta.dayLow;
+                let dayVol = liveMeta.regularMarketVolume || liveMeta.volume;
+
+                if (!dayHigh && quote0?.high) {
+                    const validHighs = quote0.high.filter(v => typeof v === 'number');
+                    if (validHighs.length > 0) dayHigh = Math.max(...validHighs);
+                }
+                if (!dayLow && quote0?.low) {
+                    const validLows = quote0.low.filter(v => typeof v === 'number');
+                    if (validLows.length > 0) dayLow = Math.min(...validLows);
+                }
+
+                const highEl = document.getElementById(`high-${index}`);
+                const lowEl = document.getElementById(`low-${index}`);
+                const volEl = document.getElementById(`vol-${index}`);
+
+                if (highEl) highEl.innerText = dayHigh ? formatPrice(dayHigh, isETF) : '--';
+                if (lowEl) lowEl.innerText = dayLow ? formatPrice(dayLow, isETF) : '--';
+                if (volEl) volEl.innerText = dayVol ? formatVolume(dayVol) : '--';
 
                 if (manualPrevCloses[stock.symbol]) previousClose = manualPrevCloses[stock.symbol];
                 document.getElementById(`prev-${index}`).innerHTML = formatPrice(previousClose, isETF);
@@ -1970,7 +2027,7 @@
             const prev2 = prev1 ? prev1.previousElementSibling : null;
             const anchorRow = prev2 || prev1 || currentRow;
             targetEl.scrollTo({
-                top: anchorRow.offsetTop,
+                top: anchorRow.offsetTop + 1,
                 behavior: 'smooth'
             });
         }
