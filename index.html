@@ -247,6 +247,7 @@
             }
 
             .stat-label {
+                margin-right: 0.2rem;
                 color: var(--text-secondary);
                 font-size: 0.8rem;
                 font-weight: 500;
@@ -1015,7 +1016,7 @@
 
                 :root,
                 html {
-                    font-size: 18px !important;
+                    font-size: 20px !important;
                 }
 
                 body {
@@ -1794,15 +1795,15 @@
                     </header>
                     <div class="stats-row-3">
                         <div class="stat-cell">
-                            <span class="stat-label">昨收 </span>
+                            <span class="stat-label">昨收</span>
                             <span id="prev-${index}" class="stat-val close-price-editable" onclick="editPreviousClose('${stock.symbol}', ${index})">--</span>
                         </div>
                         <div class="stat-cell">
-                            <span class="stat-label">最高 </span>
+                            <span class="stat-label">最高</span>
                             <strong id="high-${index}" class="stat-val" style="color:var(--price-up);">--</strong>
                         </div>
                         <div class="stat-cell">
-                            <span class="stat-label">最低 </span>
+                            <span class="stat-label">最低</span>
                             <strong id="low-${index}" class="stat-val" style="color:var(--price-down);">--</strong>
                         </div>
                     </div>
