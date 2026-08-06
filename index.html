@@ -1178,7 +1178,7 @@
 
     <div class="global-top-bar">
         <div class="global-timestamp" id="globalTimestamp">數據載入中...</div>
-        <div class="version-badge">v0806.01</div>
+        <div class="version-badge">v0806.03</div>
     </div>
 
     <div class="viewport-wrapper">
@@ -1885,10 +1885,11 @@
 
         function editStockName(index) {
             const stock = stockList[index];
-            const newName = prompt(`[編輯股票名稱] 請輸入 ${stock.symbol} 的顯示名稱:`, stock.name);
+            const defaultPromptVal = (stock.name && stock.name.length > 10) ? '' : stock.name;
+            const newName = prompt(`[編輯股票名稱]\n代號: ${stock.symbol}\n目前: ${stock.name}\n\n請輸入新的暱稱:`, defaultPromptVal);
             if (newName === null) return;
             const trimmed = newName.trim();
-            if (!trimmed) return alert('名稱不可為空！');
+            if (!trimmed) return;
             stockList[index].name = trimmed;
             stockList[index].isCustomName = true;
             saveToStorage();
