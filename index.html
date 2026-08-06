@@ -8,8 +8,10 @@
     <title>零用錢計算機</title>
 
     <!-- App Icon & Mobile PWA Meta -->
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180"
+        href="https://ycpolly.github.io/tool-dip-rip-calc/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32"
+        href="https://ycpolly.github.io/tool-dip-rip-calc/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="零用錢計算機">
@@ -1425,7 +1427,7 @@
                     <input type="number" id="psStopPrice" step="any" inputmode="decimal" oninput="onPsInputChange()">
                 </div>
                 <div class="calc-field-group">
-                    <label for="psShares">ㄢ股數</label>
+                    <label for="psShares">股數</label>
                     <input type="number" id="psShares" step="1" inputmode="numeric" pattern="[0-9]*"
                         oninput="onPsInputChange()">
                 </div>
@@ -2547,11 +2549,19 @@
                 return;
             }
 
-            const grossMargin = ((targetPrice - buyPrice) / buyPrice) * 100;
-            const upsideDistance = targetPrice - buyPrice;
-            const downsideDistance = buyPrice - stopPrice;
-            const rrRatio = downsideDistance > 0 ? (upsideDistance / downsideDistance) : 0;
+            // 1. 計算毛利與停損空間 (未填防守價時預設帶入 1.5% 停損比例)
+            const profitMargin = ((targetPrice - buyPrice) / buyPrice) * 100;
+            const lossMargin = (stopPrice > 0 && stopPrice < buyPrice)
+                ? ((buyPrice - stopPrice) / buyPrice) * 100
+                : 1.5;
 
+            const rrRatio = parseFloat((profitMargin / lossMargin).toFixed(1));
+
+            // 扣除摩擦成本率 (個股約 0.585%, ETF 約 0.385%)
+            const frictionRate = psIsETF ? 0.385 : 0.585;
+            const netProfitPercent = (profitMargin - frictionRate).toFixed(2);
+
+            // 金額明細計算
             const buyAmount = buyPrice * shares;
             const buyFee = Math.max(1, Math.floor(buyAmount * 0.001425));
             const buyTotalCost = buyAmount + buyFee;
@@ -2562,27 +2572,27 @@
             const targetTax = Math.floor(targetAmount * taxRate);
             const targetNetIncome = targetAmount - targetFee - targetTax;
 
-            const netProfit = targetNetIncome - buyTotalCost;
+            const netProfitAmount = targetNetIncome - buyTotalCost;
             const totalFriction = buyFee + targetFee + targetTax;
 
-            document.getElementById('psGrossMargin').innerText = `${grossMargin > 0 ? '+' : ''}${grossMargin.toFixed(2)}%`;
-            document.getElementById('psRiskReward').innerText = `${rrRatio.toFixed(2)} : 1`;
-            document.getElementById('psNetProfit').innerText = `${netProfit > 0 ? '+' : ''}${netProfit.toLocaleString('en-US')} 元`;
+            document.getElementById('psGrossMargin').innerText = `${profitMargin > 0 ? '+' : ''}${profitMargin.toFixed(2)}%`;
+            document.getElementById('psRiskReward').innerText = `${rrRatio.toFixed(1)} : 1`;
+            document.getElementById('psNetProfit').innerText = `${netProfitAmount > 0 ? '+' : ''}${netProfitAmount.toLocaleString('en-US')} 元`;
             document.getElementById('psFrictionCost').innerText = `${totalFriction.toLocaleString('en-US')} 元`;
 
-            // 燈號判定邏輯
-            if (grossMargin >= 3.5 && rrRatio >= 2.5) {
+            // 2. 判斷燈號 (完全對齊使用者體驗算式)
+            if (profitMargin >= 3.5 && rrRatio >= 2.0) {
                 badgeBox.className = 'signal-badge-box signal-badge-green';
-                badgeText.innerText = '🟢 可下單！空間充足，勝率高';
-                badgeDesc.innerText = '毛利 ≥3.5% 且 損益比 ≥2.5';
-            } else if (grossMargin < 2.0 || rrRatio < 1.5) {
-                badgeBox.className = 'signal-badge-box signal-badge-red';
-                badgeText.innerText = '🔴 放棄！天花板太近，別幫券商打工';
-                badgeDesc.innerText = '毛利 <2.0% 或 損益比 <1.5';
-            } else {
+                badgeText.innerText = `🟢 綠燈：空間充足！值得建立部位（預期純利 +${netProfitPercent}%）`;
+                badgeDesc.innerText = `毛利空間: +${profitMargin.toFixed(2)}% | 損益比: ${rrRatio.toFixed(1)} : 1`;
+            } else if (profitMargin >= 2.0) {
                 badgeBox.className = 'signal-badge-box signal-badge-yellow';
-                badgeText.innerText = '🟡 再想想！價差偏窄，成本佔比高';
-                badgeDesc.innerText = '毛利 2.0%-3.4% 摩擦成本高';
+                badgeText.innerText = `🟡 黃燈：天花板稍近（純利 +${netProfitPercent}%），注意手續費吞噬！`;
+                badgeDesc.innerText = `毛利空間: +${profitMargin.toFixed(2)}% | 損益比: ${rrRatio.toFixed(1)} : 1`;
+            } else {
+                badgeBox.className = 'signal-badge-box signal-badge-red';
+                badgeText.innerText = `🔴 紅燈：天花板壓頂（純利 +${netProfitPercent}%）！利潤被成本吃光，果斷放棄！`;
+                badgeDesc.innerText = `毛利空間: +${profitMargin.toFixed(2)}% | 損益比: ${rrRatio.toFixed(1)} : 1`;
             }
         }
 
