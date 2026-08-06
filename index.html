@@ -8,10 +8,8 @@
     <title>零用錢計算機</title>
 
     <!-- App Icon & Mobile PWA Meta -->
-    <link rel="apple-touch-icon" sizes="180x180"
-        href="https://ycpolly.github.io/tool-dip-rip-calc/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32"
-        href="https://ycpolly.github.io/tool-dip-rip-calc/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=2">
+    <link rel="icon" type="image/png" sizes="32x32" href="./apple-touch-icon.png?v=2">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="零用錢計算機">
@@ -1435,11 +1433,11 @@
 
             <div class="calc-details-box">
                 <div class="calc-details-row" style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">
-                    <span>毛利空間 (%)</span>
-                    <strong id="psGrossMargin">+0.00%</strong>
+                    <span>預期純利 (%)</span>
+                    <strong id="psNetMargin">+0.00%</strong>
                 </div>
                 <div class="calc-details-row" style="font-size:0.9rem; font-weight:700; color:var(--accent-gold);">
-                    <span>風報比 (損益比 R/R)</span>
+                    <span>損益比 R/R</span>
                     <strong id="psRiskReward">0.00 : 1</strong>
                 </div>
                 <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary);">
@@ -1886,7 +1884,7 @@
         function editStockName(index) {
             const stock = stockList[index];
             const defaultPromptVal = (stock.name && stock.name.length > 10) ? '' : stock.name;
-            const newName = prompt(`[編輯股票名稱]\n代號: ${stock.symbol}\n目前: ${stock.name}\n\n請輸入新的暱稱:`, defaultPromptVal);
+            const newName = prompt(`[編輯股票暱稱]\n代號：${stock.symbol}\n舊名：${stock.name}\n\n請輸入新的暱稱：`, defaultPromptVal);
             if (newName === null) return;
             const trimmed = newName.trim();
             if (!trimmed) return;
@@ -2543,7 +2541,7 @@
             const badgeDesc = document.getElementById('psSignalDesc');
 
             if (buyPrice <= 0 || targetPrice <= 0 || shares <= 0) {
-                document.getElementById('psGrossMargin').innerText = '+0.00%';
+                document.getElementById('psNetMargin').innerText = '+0.00%';
                 document.getElementById('psRiskReward').innerText = '0.00 : 1';
                 document.getElementById('psNetProfit').innerText = '0 元';
                 document.getElementById('psFrictionCost').innerText = '0 元';
@@ -2576,24 +2574,24 @@
             const netProfitAmount = targetNetIncome - buyTotalCost;
             const totalFriction = buyFee + targetFee + targetTax;
 
-            document.getElementById('psGrossMargin').innerText = `${profitMargin > 0 ? '+' : ''}${profitMargin.toFixed(2)}%`;
+            document.getElementById('psNetMargin').innerText = `${netProfitPercent > 0 ? '+' : ''}${netProfitPercent}%`;
             document.getElementById('psRiskReward').innerText = `${rrRatio.toFixed(1)} : 1`;
             document.getElementById('psNetProfit').innerText = `${netProfitAmount > 0 ? '+' : ''}${netProfitAmount.toLocaleString('en-US')} 元`;
             document.getElementById('psFrictionCost').innerText = `${totalFriction.toLocaleString('en-US')} 元`;
 
-            // 2. 判斷燈號 (完全對齊使用者體驗算式)
+            // 2. 判斷燈號 (燈號小字顯示判定門檻 Range)
             if (profitMargin >= 3.5 && rrRatio >= 2.0) {
                 badgeBox.className = 'signal-badge-box signal-badge-green';
-                badgeText.innerText = `🟢 綠燈：空間充足！值得建立部位（預期純利 +${netProfitPercent}%）`;
-                badgeDesc.innerText = `毛利空間: +${profitMargin.toFixed(2)}% | 損益比: ${rrRatio.toFixed(1)} : 1`;
+                badgeText.innerText = '🟢 空間充足！可建立部位';
+                badgeDesc.innerText = '毛利 ≥ 3.5% 且 損益比 ≥ 2.0';
             } else if (profitMargin >= 2.0) {
                 badgeBox.className = 'signal-badge-box signal-badge-yellow';
-                badgeText.innerText = `🟡 黃燈：天花板稍近（純利 +${netProfitPercent}%），注意手續費吞噬！`;
-                badgeDesc.innerText = `毛利空間: +${profitMargin.toFixed(2)}% | 損益比: ${rrRatio.toFixed(1)} : 1`;
+                badgeText.innerText = '🟡 天花板稍近，注意手續費吞噬';
+                badgeDesc.innerText = '毛利介於 2.0% 和 3.4% 之間，價差偏窄';
             } else {
                 badgeBox.className = 'signal-badge-box signal-badge-red';
-                badgeText.innerText = `🔴 紅燈：天花板壓頂（純利 +${netProfitPercent}%）！利潤被成本吃光，果斷放棄！`;
-                badgeDesc.innerText = `毛利空間: +${profitMargin.toFixed(2)}% | 損益比: ${rrRatio.toFixed(1)} : 1`;
+                badgeText.innerText = '🔴 利潤被手續費吃光，果斷放棄';
+                badgeDesc.innerText = '毛利 < 2.0% 或 損益比 < 1.5';
             }
         }
 
