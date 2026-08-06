@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-    <title>Price Action Tracker v24</title>
+    <title>零用錢計算機</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -412,6 +412,11 @@
                 gap: 1rem;
                 box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
                 z-index: 100;
+                pointer-events: none;
+            }
+
+            .floating-bar>* {
+                pointer-events: auto;
             }
 
             .nav-btn-fat {
@@ -892,11 +897,104 @@
                 font-weight: 600;
             }
 
+            .calc-tax-selector {
+                display: flex;
+                gap: 0.5rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .calc-tax-btn {
+                flex: 1;
+                text-align: center;
+                padding: 0.45rem 0.6rem;
+                font-size: 0.8rem;
+                font-weight: 600;
+                border-radius: 0.4rem;
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid var(--border-color);
+                color: var(--text-secondary);
+                cursor: pointer;
+                transition: all 0.15s ease;
+            }
+
+            .calc-tax-btn.active {
+                background: var(--primary-color);
+                color: var(--bg-color);
+                border-color: var(--primary-color);
+                font-weight: 700;
+            }
+
             .calc-grid-form {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 0.75rem;
-                margin-bottom: 1rem;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 0.5rem;
+            }
+
+            .speed-dial-menu {
+                position: fixed;
+                bottom: 6rem;
+                right: 1.5rem;
+                background-color: var(--card-bg);
+                border: 1px solid var(--border-dark);
+                border-radius: 0.85rem;
+                padding: 0.4rem;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+                z-index: 150;
+                display: none;
+                flex-direction: column;
+                gap: 0.3rem;
+                min-width: 11.5rem;
+            }
+
+            .speed-dial-menu.active {
+                display: flex;
+            }
+
+            .speed-dial-item {
+                display: flex;
+                align-items: center;
+                gap: 0.55rem;
+                padding: 0.6rem 0.8rem;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-primary);
+                border-radius: 0.5rem;
+                cursor: pointer;
+                transition: background 0.15s ease;
+            }
+
+            .speed-dial-item:hover,
+            .speed-dial-item:active {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+
+            .signal-badge-box {
+                padding: 0.6rem 0.8rem;
+                border-radius: 0.6rem;
+                margin-bottom: 0.75rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                font-size: 0.85rem;
+                border: 1px solid transparent;
+            }
+
+            .signal-badge-green {
+                background: rgba(67, 172, 158, 0.12);
+                border-color: rgba(67, 172, 158, 0.3);
+                color: #43ac9e;
+            }
+
+            .signal-badge-yellow {
+                background: rgba(255, 214, 102, 0.12);
+                border-color: rgba(255, 214, 102, 0.3);
+                color: #ffd666;
+            }
+
+            .signal-badge-red {
+                background: rgba(215, 99, 96, 0.12);
+                border-color: rgba(215, 99, 96, 0.3);
+                color: #d76360;
             }
 
             .calc-field-group {
@@ -967,7 +1065,7 @@
 
             @media (min-width: 768px) {
                 body {
-                    padding-bottom: 2rem;
+                    padding-bottom: 5.5rem;
                 }
 
                 .global-top-bar,
@@ -1070,12 +1168,20 @@
 
     <div class="global-top-bar">
         <div class="global-timestamp" id="globalTimestamp">數據載入中...</div>
-        <div class="version-badge">2026-08-05 v24</div>
+        <div class="version-badge">v0806.01</div>
     </div>
 
     <div class="viewport-wrapper">
         <div class="stocks-container" id="stocksContainer">
             <!-- JS 動態掛載 -->
+        </div>
+        <div class="speed-dial-menu" id="speedDialMenu">
+            <div class="speed-dial-item" onclick="openCalcFromSpeedDial()">
+                <span>🧮</span> 損益試算對帳單
+            </div>
+            <div class="speed-dial-item" onclick="openProfitSpaceFromSpeedDial()">
+                <span>📈</span> 獲利空間試算器
+            </div>
         </div>
     </div>
 
@@ -1105,19 +1211,14 @@
             </button>
         </div>
 
-        <button class="nav-btn-fat" onclick="openCalcModalDefault()"
-            ontouchstart="event.preventDefault(); openCalcModalDefault();" title="損益試算">
+        <button class="nav-btn-fat" onclick="toggleSpeedDialMenu()"
+            ontouchstart="event.preventDefault(); toggleSpeedDialMenu();" title="計算機選單">
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="4" y="2" width="16" height="20" rx="2" />
                 <line x1="8" y1="6" x2="16" y2="6" />
                 <line x1="16" y1="14" x2="16" y2="18" />
                 <path d="M8 10h.01" />
-                <path d="M12 10h.01" />
-                <path d="M16 10h.01" />
-                <path d="M8 14h.01" />
-                <path d="M12 14h.01" />
-                <path d="M8 18h.01" />
                 <path d="M12 18h.01" />
             </svg>
         </button>
@@ -1192,30 +1293,33 @@
                 </button>
             </div>
 
-            <div class="calc-grid-form" style="margin-bottom:0.75rem; gap:0.6rem;">
+            <div class="calc-tax-selector">
+                <button type="button" class="calc-tax-btn active" id="taxBtnStock" onclick="setCalcTaxType('stock')">個股
+                    (0.3%證交稅)</button>
+                <button type="button" class="calc-tax-btn" id="taxBtnEtf" onclick="setCalcTaxType('etf')">ETF
+                    (0.1%證交稅)</button>
+            </div>
+
+            <div class="calc-grid-form" style="margin-bottom:0.4rem; gap:0.4rem;">
                 <div class="calc-field-group">
-                    <div
-                        style="display:flex; justify-content:space-between; align-items:center; height:1.3rem; margin-bottom:0.2rem;">
-                        <label for="calcBuyPrice" style="margin-bottom:0;">買入價格</label>
-                    </div>
+                    <label for="calcBuyPrice">買入價格</label>
                     <input type="number" id="calcBuyPrice" step="any" inputmode="decimal" oninput="onCalcInputChange()">
                 </div>
                 <div class="calc-field-group">
-                    <div
-                        style="display:flex; justify-content:space-between; align-items:center; height:1.3rem; margin-bottom:0.2rem;">
-                        <label for="calcSellPrice" style="margin-bottom:0;">預期賣價</label>
-                        <span id="calcBreakEven"
-                            style="font-size:0.75rem; color:var(--accent-gold); font-weight:600;">保本:
-                            --元</span>
-                    </div>
+                    <label for="calcSellPrice">預期賣價</label>
                     <input type="number" id="calcSellPrice" step="any" inputmode="decimal"
                         oninput="onCalcInputChange()">
                 </div>
-                <div class="calc-field-group" style="grid-column: span 2;">
+                <div class="calc-field-group">
                     <label for="calcShares">交易股數</label>
                     <input type="number" id="calcShares" step="1" inputmode="numeric" pattern="[0-9]*"
                         oninput="onCalcInputChange()">
                 </div>
+            </div>
+
+            <div
+                style="text-align: center; font-size: 0.8rem; color: var(--accent-gold); font-weight: 700; margin: 0.2rem 0 0.6rem 0;">
+                <span id="calcBreakEven">保本: --元</span>
             </div>
 
             <div class="calc-details-box">
@@ -1269,6 +1373,72 @@
                 <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary);">
                     <span>摩擦成本 (買賣手續費 + 證交稅)</span>
                     <span id="calcFrictionCost">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="calc-modal-overlay" id="profitSpaceModal" onclick="handleProfitSpaceOverlayClick(event)">
+        <div class="calc-modal-card" onclick="event.stopPropagation()">
+            <div class="calc-header" style="margin-bottom:0.6rem;">
+                <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary);">獲利空間 & 損益比試算器</h3>
+                <button class="nav-btn-fat modal-close-btn" onclick="toggleProfitSpaceModal(false)" title="關閉">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="calc-tax-selector">
+                <button type="button" class="calc-tax-btn active" id="psTaxBtnStock" onclick="setPsTaxType('stock')">個股
+                    (0.3%證交稅)</button>
+                <button type="button" class="calc-tax-btn" id="psTaxBtnEtf" onclick="setPsTaxType('etf')">ETF
+                    (0.1%證交稅)</button>
+            </div>
+
+            <div id="psSignalBadgeBox" class="signal-badge-box signal-badge-green">
+                <span id="psSignalBadgeText" style="font-weight:700;">🟢 [可下單] 空間充足，勝率高</span>
+                <span id="psSignalDesc" style="font-size:0.75rem; opacity:0.9;">毛利 ≥3.5% 且 損益比 ≥2.5</span>
+            </div>
+
+            <div class="calc-grid-form"
+                style="grid-template-columns: 1fr 1fr 1fr 1fr; margin-bottom:0.6rem; gap:0.35rem;">
+                <div class="calc-field-group">
+                    <label for="psBuyPrice">買入價格</label>
+                    <input type="number" id="psBuyPrice" step="any" inputmode="decimal" oninput="onPsInputChange()">
+                </div>
+                <div class="calc-field-group">
+                    <label for="psTargetPrice">天花板價</label>
+                    <input type="number" id="psTargetPrice" step="any" inputmode="decimal" oninput="onPsInputChange()">
+                </div>
+                <div class="calc-field-group">
+                    <label for="psStopPrice">防守價格</label>
+                    <input type="number" id="psStopPrice" step="any" inputmode="decimal" oninput="onPsInputChange()">
+                </div>
+                <div class="calc-field-group">
+                    <label for="psShares">交易股數</label>
+                    <input type="number" id="psShares" step="1" inputmode="numeric" pattern="[0-9]*"
+                        oninput="onPsInputChange()">
+                </div>
+            </div>
+
+            <div class="calc-details-box">
+                <div class="calc-details-row" style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">
+                    <span>毛利空間 (%)</span>
+                    <strong id="psGrossMargin">+0.00%</strong>
+                </div>
+                <div class="calc-details-row" style="font-size:0.9rem; font-weight:700; color:var(--accent-gold);">
+                    <span>風報比 (損益比 R/R)</span>
+                    <strong id="psRiskReward">0.00 : 1</strong>
+                </div>
+                <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary);">
+                    <span>預估扣費後淨利</span>
+                    <strong id="psNetProfit" style="color:var(--text-primary);">0 元</strong>
+                </div>
+                <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary);">
+                    <span>總預估摩擦成本</span>
+                    <span id="psFrictionCost">0 元</span>
                 </div>
             </div>
         </div>
@@ -2068,6 +2238,8 @@
         }
 
         let calcCurrentStockIndex = 0;
+        let calcMode = 'standalone'; // 'standalone' 或 'stock'
+        let calcIsETF = false;
 
         function handleCalcOverlayClick(e) {
             if (e.target.id === 'calcModal') toggleCalcModal(false);
@@ -2079,32 +2251,87 @@
             else modal.classList.remove('active');
         }
 
+        function setCalcTaxType(type) {
+            calcIsETF = (type === 'etf');
+            if (calcMode === 'standalone') {
+                localStorage.setItem('calc_standalone_is_etf', JSON.stringify(calcIsETF));
+            }
+            updateCalcTaxTypeUI();
+            recalculateProfit();
+        }
+
+        function updateCalcTaxTypeUI() {
+            const selectorEl = document.querySelector('.calc-tax-selector');
+            if (selectorEl) {
+                selectorEl.style.display = (calcMode === 'standalone') ? 'flex' : 'none';
+            }
+
+            const stockBtn = document.getElementById('taxBtnStock');
+            const etfBtn = document.getElementById('taxBtnEtf');
+            if (!stockBtn || !etfBtn) return;
+            if (calcIsETF) {
+                stockBtn.classList.remove('active');
+                etfBtn.classList.add('active');
+            } else {
+                stockBtn.classList.add('active');
+                etfBtn.classList.remove('active');
+            }
+        }
+
         function openCalcModalDefault() {
-            if (stockList.length === 0) return;
-            openCalcModal(currentSlideIndex || 0, null);
+            calcMode = 'standalone';
+            calcCurrentStockIndex = -1;
+            document.getElementById('calcStockTitle').innerText = '獨立通用損益試算對帳單';
+
+            calcIsETF = JSON.parse(localStorage.getItem('calc_standalone_is_etf')) || false;
+            updateCalcTaxTypeUI();
+
+            const buyPriceInput = document.getElementById('calcBuyPrice');
+            const sellPriceInput = document.getElementById('calcSellPrice');
+            const sharesInput = document.getElementById('calcShares');
+
+            buyPriceInput.value = localStorage.getItem('calc_standalone_buy_price') || '100';
+            sellPriceInput.value = localStorage.getItem('calc_standalone_sell_price') || '105';
+            sharesInput.value = localStorage.getItem('calc_standalone_shares') || '10';
+
+            recalculateProfit();
+            toggleCalcModal(true);
         }
 
         function openCalcModal(stockIndex, targetSellPrice) {
-            if (stockIndex < 0 || stockIndex >= stockList.length) return;
+            stockIndex = parseInt(stockIndex, 10);
+            if (isNaN(stockIndex) || stockIndex < 0 || stockIndex >= stockList.length) return;
+            calcMode = 'stock';
             calcCurrentStockIndex = stockIndex;
             const stock = stockList[stockIndex];
-            const isETF = stock.symbol.startsWith('00');
+            if (!stock) return;
+
+            calcIsETF = stock.symbol.startsWith('00');
+            updateCalcTaxTypeUI();
 
             document.getElementById('calcStockTitle').innerText = `${stock.name} (${stock.symbol})`;
 
-            // 抓取昨收價
+            // 抓取昨收價與現價 (嚴格 NaN 防呆)
             const prevCloseText = document.getElementById(`prev-${stockIndex}`)?.innerText;
-            const prevClose = parseFloat(prevCloseText) || runtimeTechnicalCache[stock.symbol]?.currentPrice || 100;
-            const currentPrice = runtimeTechnicalCache[stock.symbol]?.currentPrice || prevClose;
+            const rawPrev = parseFloat(prevCloseText);
+            const prevClose = (!isNaN(rawPrev) && rawPrev > 0)
+                ? rawPrev
+                : (runtimeTechnicalCache[stock.symbol]?.currentPrice || 100);
+
+            const rawCurrent = runtimeTechnicalCache[stock.symbol]?.currentPrice;
+            const currentPrice = (!isNaN(rawCurrent) && rawCurrent > 0) ? rawCurrent : prevClose;
+
+            const rawTarget = parseFloat(targetSellPrice);
+            const validTargetSell = (!isNaN(rawTarget) && rawTarget > 0) ? rawTarget : currentPrice;
 
             const buyPriceInput = document.getElementById('calcBuyPrice');
             const sellPriceInput = document.getElementById('calcSellPrice');
             const sharesInput = document.getElementById('calcShares');
 
             buyPriceInput.value = prevClose;
-            sellPriceInput.value = targetSellPrice !== null && targetSellPrice !== undefined ? targetSellPrice : currentPrice;
+            sellPriceInput.value = validTargetSell;
 
-            sharesInput.value = localStorage.getItem('calc_user_shares') || 10;
+            sharesInput.value = localStorage.getItem('calc_user_shares') || 1000;
 
             recalculateProfit();
             toggleCalcModal(true);
@@ -2116,16 +2343,23 @@
         }
 
         function onCalcInputChange() {
+            const buyVal = document.getElementById('calcBuyPrice').value;
+            const sellVal = document.getElementById('calcSellPrice').value;
             const sharesVal = document.getElementById('calcShares').value;
-            if (sharesVal) localStorage.setItem('calc_user_shares', sharesVal);
+
+            if (calcMode === 'standalone') {
+                if (buyVal) localStorage.setItem('calc_standalone_buy_price', buyVal);
+                if (sellVal) localStorage.setItem('calc_standalone_sell_price', sellVal);
+                if (sharesVal) localStorage.setItem('calc_standalone_shares', sharesVal);
+            } else {
+                if (sharesVal) localStorage.setItem('calc_user_shares', sharesVal);
+            }
 
             recalculateProfit();
         }
 
         function recalculateProfit() {
-            const stock = stockList[calcCurrentStockIndex];
-            if (!stock) return;
-            const isETF = stock.symbol.startsWith('00');
+            const isETF = calcIsETF;
 
             const buyPrice = parseFloat(document.getElementById('calcBuyPrice').value) || 0;
             const sellPrice = parseFloat(document.getElementById('calcSellPrice').value) || 0;
@@ -2200,6 +2434,159 @@
 
             document.getElementById('calcFrictionCost').innerText = `${totalFriction.toLocaleString('en-US')}`;
         }
+
+        // --- 獲利空間試算器邏輯 ---
+        let psIsETF = false;
+
+        function toggleSpeedDialMenu(show) {
+            const menu = document.getElementById('speedDialMenu');
+            if (!menu) return;
+            if (show !== undefined) {
+                if (show) menu.classList.add('active');
+                else menu.classList.remove('active');
+            } else {
+                menu.classList.toggle('active');
+            }
+        }
+
+        function openCalcFromSpeedDial() {
+            toggleSpeedDialMenu(false);
+            openCalcModalDefault();
+        }
+
+        function openProfitSpaceFromSpeedDial() {
+            toggleSpeedDialMenu(false);
+            openProfitSpaceModal();
+        }
+
+        function handleProfitSpaceOverlayClick(e) {
+            if (e.target.id === 'profitSpaceModal') toggleProfitSpaceModal(false);
+        }
+
+        function toggleProfitSpaceModal(show) {
+            const modal = document.getElementById('profitSpaceModal');
+            if (show) modal.classList.add('active');
+            else modal.classList.remove('active');
+        }
+
+        function setPsTaxType(type) {
+            psIsETF = (type === 'etf');
+            localStorage.setItem('ps_is_etf', JSON.stringify(psIsETF));
+            updatePsTaxUI();
+            recalculateProfitSpace();
+        }
+
+        function updatePsTaxUI() {
+            const stockBtn = document.getElementById('psTaxBtnStock');
+            const etfBtn = document.getElementById('psTaxBtnEtf');
+            if (!stockBtn || !etfBtn) return;
+            if (psIsETF) {
+                stockBtn.classList.remove('active');
+                etfBtn.classList.add('active');
+            } else {
+                stockBtn.classList.add('active');
+                etfBtn.classList.remove('active');
+            }
+        }
+
+        function openProfitSpaceModal() {
+            psIsETF = JSON.parse(localStorage.getItem('ps_is_etf')) || false;
+            updatePsTaxUI();
+
+            const buyInput = document.getElementById('psBuyPrice');
+            const targetInput = document.getElementById('psTargetPrice');
+            const stopInput = document.getElementById('psStopPrice');
+            const sharesInput = document.getElementById('psShares');
+
+            buyInput.value = localStorage.getItem('ps_buy_price') || '100';
+            targetInput.value = localStorage.getItem('ps_target_price') || '108';
+            stopInput.value = localStorage.getItem('ps_stop_price') || '97';
+            sharesInput.value = localStorage.getItem('ps_shares') || '1000';
+
+            recalculateProfitSpace();
+            toggleProfitSpaceModal(true);
+        }
+
+        function onPsInputChange() {
+            const buyVal = document.getElementById('psBuyPrice').value;
+            const targetVal = document.getElementById('psTargetPrice').value;
+            const stopVal = document.getElementById('psStopPrice').value;
+            const sharesVal = document.getElementById('psShares').value;
+
+            if (buyVal) localStorage.setItem('ps_buy_price', buyVal);
+            if (targetVal) localStorage.setItem('ps_target_price', targetVal);
+            if (stopVal) localStorage.setItem('ps_stop_price', stopVal);
+            if (sharesVal) localStorage.setItem('ps_shares', sharesVal);
+
+            recalculateProfitSpace();
+        }
+
+        function recalculateProfitSpace() {
+            const buyPrice = parseFloat(document.getElementById('psBuyPrice').value) || 0;
+            const targetPrice = parseFloat(document.getElementById('psTargetPrice').value) || 0;
+            const stopPrice = parseFloat(document.getElementById('psStopPrice').value) || 0;
+            const shares = parseInt(document.getElementById('psShares').value, 10) || 0;
+
+            const badgeBox = document.getElementById('psSignalBadgeBox');
+            const badgeText = document.getElementById('psSignalBadgeText');
+            const badgeDesc = document.getElementById('psSignalDesc');
+
+            if (buyPrice <= 0 || targetPrice <= 0 || shares <= 0) {
+                document.getElementById('psGrossMargin').innerText = '+0.00%';
+                document.getElementById('psRiskReward').innerText = '0.00 : 1';
+                document.getElementById('psNetProfit').innerText = '0 元';
+                document.getElementById('psFrictionCost').innerText = '0 元';
+                return;
+            }
+
+            const grossMargin = ((targetPrice - buyPrice) / buyPrice) * 100;
+            const upsideDistance = targetPrice - buyPrice;
+            const downsideDistance = buyPrice - stopPrice;
+            const rrRatio = downsideDistance > 0 ? (upsideDistance / downsideDistance) : 0;
+
+            const buyAmount = buyPrice * shares;
+            const buyFee = Math.max(1, Math.floor(buyAmount * 0.001425));
+            const buyTotalCost = buyAmount + buyFee;
+
+            const targetAmount = targetPrice * shares;
+            const targetFee = Math.max(1, Math.floor(targetAmount * 0.001425));
+            const taxRate = psIsETF ? 0.001 : 0.003;
+            const targetTax = Math.floor(targetAmount * taxRate);
+            const targetNetIncome = targetAmount - targetFee - targetTax;
+
+            const netProfit = targetNetIncome - buyTotalCost;
+            const totalFriction = buyFee + targetFee + targetTax;
+
+            document.getElementById('psGrossMargin').innerText = `${grossMargin > 0 ? '+' : ''}${grossMargin.toFixed(2)}%`;
+            document.getElementById('psRiskReward').innerText = `${rrRatio.toFixed(2)} : 1`;
+            document.getElementById('psNetProfit').innerText = `${netProfit > 0 ? '+' : ''}${netProfit.toLocaleString('en-US')} 元`;
+            document.getElementById('psFrictionCost').innerText = `${totalFriction.toLocaleString('en-US')} 元`;
+
+            // 燈號判定邏輯
+            if (grossMargin >= 3.5 && rrRatio >= 2.5) {
+                badgeBox.className = 'signal-badge-box signal-badge-green';
+                badgeText.innerText = '🟢 [可下單] 空間充足，勝率高';
+                badgeDesc.innerText = '毛利 ≥3.5% 且 損益比 ≥2.5';
+            } else if (grossMargin < 2.0 || rrRatio < 1.5) {
+                badgeBox.className = 'signal-badge-box signal-badge-red';
+                badgeText.innerText = '🔴 [放棄它] 天花板太近，別幫券商打工';
+                badgeDesc.innerText = '毛利 <2.0% 或 損益比 <1.5';
+            } else {
+                badgeBox.className = 'signal-badge-box signal-badge-yellow';
+                badgeText.innerText = '🟡 [再想想] 價差偏窄，成本佔比高';
+                badgeDesc.innerText = '毛利 2.0%-3.4% 摩擦成本高';
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('speedDialMenu');
+            const floatingBar = document.querySelector('.floating-bar');
+            if (menu && menu.classList.contains('active')) {
+                if (!menu.contains(e.target) && !floatingBar.contains(e.target)) {
+                    toggleSpeedDialMenu(false);
+                }
+            }
+        });
 
         let touchStartX = 0;
         let touchStartY = 0;
