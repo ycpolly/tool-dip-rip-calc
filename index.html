@@ -973,6 +973,7 @@
                 border-radius: 0.6rem;
                 margin-bottom: 0.75rem;
                 display: flex;
+                flex-direction: column;
                 align-items: center;
                 justify-content: space-between;
                 font-size: 0.85rem;
@@ -1177,10 +1178,10 @@
         </div>
         <div class="speed-dial-menu" id="speedDialMenu">
             <div class="speed-dial-item" onclick="openCalcFromSpeedDial()">
-                <span>🧮</span> 損益試算對帳單
+                <span>🧮</span> 賣出前：算收入明細
             </div>
             <div class="speed-dial-item" onclick="openProfitSpaceFromSpeedDial()">
-                <span>📈</span> 獲利空間試算器
+                <span>📈</span> 買進前：算獲利空間
             </div>
         </div>
     </div>
@@ -1236,7 +1237,7 @@
     <div class="modal-overlay" id="quickPickerModal" onclick="handleQuickPickerOverlayClick(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h3>快速切換股票</h3>
+                <h3>快速切換</h3>
                 <button class="nav-btn-fat modal-close-btn" onclick="toggleQuickPickerModal(false)" title="關閉">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -1260,14 +1261,14 @@
                 </button>
             </div>
             <div class="form-group-single">
-                <input type="text" id="newSymbol" placeholder="輸入名稱或代號 (例: 2330、欣興)" autocomplete="off"
+                <input type="text" id="newSymbol" placeholder="名稱或代號 (例: 2330、欣興)" autocomplete="off"
                     autocapitalize="off" onkeydown="if(event.key==='Enter') addStock()">
                 <button class="add-btn-full" onclick="addStock()">新增</button>
             </div>
             <div class="stock-list-manage" id="manageList"></div>
 
             <div class="modal-footer-btns">
-                <button class="clear-all-btn" onclick="clearAllStocks()">清除所有</button>
+                <button class="clear-all-btn" onclick="clearAllStocks()">清除資料</button>
                 <button class="default-all-btn" onclick="restoreDefaultStocks()">恢復預設</button>
             </div>
 
@@ -1302,16 +1303,16 @@
 
             <div class="calc-grid-form" style="margin-bottom:0.4rem; gap:0.4rem;">
                 <div class="calc-field-group">
-                    <label for="calcBuyPrice">買入價格</label>
+                    <label for="calcBuyPrice">買入價</label>
                     <input type="number" id="calcBuyPrice" step="any" inputmode="decimal" oninput="onCalcInputChange()">
                 </div>
                 <div class="calc-field-group">
-                    <label for="calcSellPrice">預期賣價</label>
+                    <label for="calcSellPrice">賣出價</label>
                     <input type="number" id="calcSellPrice" step="any" inputmode="decimal"
                         oninput="onCalcInputChange()">
                 </div>
                 <div class="calc-field-group">
-                    <label for="calcShares">交易股數</label>
+                    <label for="calcShares">股數</label>
                     <input type="number" id="calcShares" step="1" inputmode="numeric" pattern="[0-9]*"
                         oninput="onCalcInputChange()">
                 </div>
@@ -1324,7 +1325,7 @@
 
             <div class="calc-details-box">
                 <div class="calc-details-row" style="font-size:1rem; font-weight:700; color:var(--text-primary);">
-                    <span>買進總成本</span>
+                    <span>買進成本</span>
                     <strong id="calcBuyTotalCost">0</strong>
                 </div>
                 <div class="calc-details-row"
@@ -1340,7 +1341,7 @@
 
                 <div class="calc-details-row"
                     style="font-size:1rem; font-weight:700; color:var(--text-primary); margin-top:0.45rem;">
-                    <span>賣出扣費後收益</span>
+                    <span>賣出成本</span>
                     <strong id="calcSellNetIncome">0</strong>
                 </div>
                 <div class="calc-details-row"
@@ -1381,7 +1382,7 @@
     <div class="calc-modal-overlay" id="profitSpaceModal" onclick="handleProfitSpaceOverlayClick(event)">
         <div class="calc-modal-card" onclick="event.stopPropagation()">
             <div class="calc-header" style="margin-bottom:0.6rem;">
-                <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary);">獲利空間 & 損益比試算器</h3>
+                <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary);">買進前，先算算：</h3>
                 <button class="nav-btn-fat modal-close-btn" onclick="toggleProfitSpaceModal(false)" title="關閉">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -1398,26 +1399,26 @@
             </div>
 
             <div id="psSignalBadgeBox" class="signal-badge-box signal-badge-green">
-                <span id="psSignalBadgeText" style="font-weight:700;">🟢 [可下單] 空間充足，勝率高</span>
+                <span id="psSignalBadgeText" style="font-weight:700;">🟢 可下單！空間充足，勝率高</span>
                 <span id="psSignalDesc" style="font-size:0.75rem; opacity:0.9;">毛利 ≥3.5% 且 損益比 ≥2.5</span>
             </div>
 
             <div class="calc-grid-form"
                 style="grid-template-columns: 1fr 1fr 1fr 1fr; margin-bottom:0.6rem; gap:0.35rem;">
                 <div class="calc-field-group">
-                    <label for="psBuyPrice">買入價格</label>
+                    <label for="psBuyPrice">買入價</label>
                     <input type="number" id="psBuyPrice" step="any" inputmode="decimal" oninput="onPsInputChange()">
                 </div>
                 <div class="calc-field-group">
-                    <label for="psTargetPrice">天花板價</label>
+                    <label for="psTargetPrice">天花板</label>
                     <input type="number" id="psTargetPrice" step="any" inputmode="decimal" oninput="onPsInputChange()">
                 </div>
                 <div class="calc-field-group">
-                    <label for="psStopPrice">防守價格</label>
+                    <label for="psStopPrice">防守價</label>
                     <input type="number" id="psStopPrice" step="any" inputmode="decimal" oninput="onPsInputChange()">
                 </div>
                 <div class="calc-field-group">
-                    <label for="psShares">交易股數</label>
+                    <label for="psShares">ㄢ股數</label>
                     <input type="number" id="psShares" step="1" inputmode="numeric" pattern="[0-9]*"
                         oninput="onPsInputChange()">
                 </div>
@@ -1437,7 +1438,7 @@
                     <strong id="psNetProfit" style="color:var(--text-primary);">0 元</strong>
                 </div>
                 <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary);">
-                    <span>總預估摩擦成本</span>
+                    <span>預估摩擦成本</span>
                     <span id="psFrictionCost">0 元</span>
                 </div>
             </div>
@@ -1986,8 +1987,8 @@
                     </div>
                     
                     <div class="fake-table-header">
-                        <div style="width: 50%; text-align: left; padding-left: 0.8rem;">指標/級距</div>
-                        <div style="width: 50%; text-align: right; padding-right: 0.8rem;">試算價格</div>
+                        <div style="width: 50%; text-align: left; padding-left: 0.8rem;">漲跌幅</div>
+                        <div style="width: 50%; text-align: right; padding-right: 0.8rem;">價格</div>
                     </div>
                 </div>
                 
@@ -2281,7 +2282,7 @@
         function openCalcModalDefault() {
             calcMode = 'standalone';
             calcCurrentStockIndex = -1;
-            document.getElementById('calcStockTitle').innerText = '獨立通用損益試算對帳單';
+            document.getElementById('calcStockTitle').innerText = '賣出前，先算算：';
 
             calcIsETF = JSON.parse(localStorage.getItem('calc_standalone_is_etf')) || false;
             updateCalcTaxTypeUI();
@@ -2565,15 +2566,15 @@
             // 燈號判定邏輯
             if (grossMargin >= 3.5 && rrRatio >= 2.5) {
                 badgeBox.className = 'signal-badge-box signal-badge-green';
-                badgeText.innerText = '🟢 [可下單] 空間充足，勝率高';
+                badgeText.innerText = '🟢 可下單！空間充足，勝率高';
                 badgeDesc.innerText = '毛利 ≥3.5% 且 損益比 ≥2.5';
             } else if (grossMargin < 2.0 || rrRatio < 1.5) {
                 badgeBox.className = 'signal-badge-box signal-badge-red';
-                badgeText.innerText = '🔴 [放棄它] 天花板太近，別幫券商打工';
+                badgeText.innerText = '🔴 放棄！天花板太近，別幫券商打工';
                 badgeDesc.innerText = '毛利 <2.0% 或 損益比 <1.5';
             } else {
                 badgeBox.className = 'signal-badge-box signal-badge-yellow';
-                badgeText.innerText = '🟡 [再想想] 價差偏窄，成本佔比高';
+                badgeText.innerText = '🟡 再想想！價差偏窄，成本佔比高';
                 badgeDesc.innerText = '毛利 2.0%-3.4% 摩擦成本高';
             }
         }
