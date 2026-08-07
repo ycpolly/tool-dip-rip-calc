@@ -103,7 +103,6 @@
             }
 
             .ring-container svg {
-                transform: rotate(-90deg);
                 width: 18px;
                 height: 18px;
             }
@@ -140,6 +139,16 @@
                 border-radius: 0.25rem;
                 font-variant-numeric: tabular-nums;
                 flex-shrink: 0;
+                cursor: pointer;
+                user-select: none;
+                -webkit-user-select: none;
+                transition: background-color 0.15s ease, transform 0.1s ease, color 0.15s ease;
+            }
+
+            .version-badge:active {
+                transform: scale(0.92);
+                background: rgba(255, 255, 255, 0.18);
+                color: var(--accent-gold);
             }
 
             .global-timestamp {
@@ -1243,7 +1252,8 @@
             </div>
             <div class="global-timestamp" id="globalTimestamp">數據載入中...</div>
         </div>
-        <div class="version-badge">v0807.02</div>
+        <div class="version-badge" id="versionBadge" onclick="forceReloadApp()" title="點擊強制重載 Web App (破除快取)">v0807.03
+        </div>
     </div>
 
     <div class="viewport-wrapper">
@@ -2154,6 +2164,14 @@
             if (prices.length < count) return null;
             const sum = prices.slice(-count).reduce((acc, v) => acc + v, 0);
             return sum / count;
+        }
+
+        function forceReloadApp() {
+            const badge = document.getElementById('versionBadge');
+            if (badge) badge.innerText = '🔄 重載中...';
+            setTimeout(() => {
+                window.location.href = window.location.pathname + '?force_reload=' + Date.now();
+            }, 150);
         }
 
         let countdownInterval = null;
