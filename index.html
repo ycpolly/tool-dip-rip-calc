@@ -1233,15 +1233,17 @@
             <div class="auto-refresh-timer" title="盤中每 60 秒自動刷新數據">
                 <div class="ring-container">
                     <svg viewBox="0 0 36 36">
-                        <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        <path id="countdownCircle" class="ring-fill" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path class="ring-bg"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path id="countdownCircle" class="ring-fill" stroke-dasharray="100, 100"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                     </svg>
                 </div>
                 <span id="countdownText" class="countdown-text">60s</span>
             </div>
             <div class="global-timestamp" id="globalTimestamp">數據載入中...</div>
         </div>
-        <div class="version-badge">v0807.01</div>
+        <div class="version-badge">v0807.02</div>
     </div>
 
     <div class="viewport-wrapper">
@@ -1250,10 +1252,10 @@
         </div>
         <div class="speed-dial-menu" id="speedDialMenu">
             <div class="speed-dial-item" onclick="openCalcFromSpeedDial()">
-                <span>🧮</span> 賣出前：算收入明細
+                <span>🧮</span> 賣出前：精算實際落袋
             </div>
             <div class="speed-dial-item" onclick="openProfitSpaceFromSpeedDial()">
-                <span>📈</span> 買進前：算獲利空間
+                <span>📈</span> 買進前：估算獲利空間
             </div>
         </div>
     </div>
@@ -1482,7 +1484,7 @@
                     <input type="number" id="psBuyPrice" step="any" inputmode="decimal" oninput="onPsInputChange()">
                 </div>
                 <div class="calc-field-group">
-                    <label for="psTargetPrice">天花板</label>
+                    <label for="psTargetPrice">天花板價</label>
                     <input type="number" id="psTargetPrice" step="any" inputmode="decimal" oninput="onPsInputChange()">
                 </div>
                 <div class="calc-field-group">
@@ -1498,19 +1500,16 @@
 
             <div class="calc-details-box">
                 <div class="calc-details-row" style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">
-                    <span>預期純利 (%)</span>
-                    <strong id="psNetMargin">+0.00%</strong>
+                    <span>預期純利 <span
+                            style="font-size:0.75rem; color:var(--text-secondary); font-weight:normal;">(已扣摩擦成本)</span></span>
+                    <strong id="psNetMargin">+0.00% (0 元)</strong>
                 </div>
                 <div class="calc-details-row" style="font-size:0.9rem; font-weight:700; color:var(--accent-gold);">
-                    <span>損益比 R/R</span>
-                    <strong id="psRiskReward">0.00 : 1</strong>
+                    <span>划算度 / 損益比</span>
+                    <strong id="psRiskReward">0.0倍 (CP值低)</strong>
                 </div>
                 <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary);">
-                    <span>預估扣費後淨利</span>
-                    <strong id="psNetProfit" style="color:var(--text-primary);">0 元</strong>
-                </div>
-                <div class="calc-details-row" style="font-size:0.8rem; color:var(--text-secondary);">
-                    <span>預估摩擦成本</span>
+                    <span>摩擦成本</span>
                     <span id="psFrictionCost">0 元</span>
                 </div>
             </div>
@@ -2642,14 +2641,24 @@
             const badgeDesc = document.getElementById('psSignalDesc');
 
             if (buyPrice <= 0 || targetPrice <= 0 || shares <= 0) {
-                document.getElementById('psNetMargin').innerText = '+0.00%';
-                document.getElementById('psRiskReward').innerText = '0.00 : 1';
-                document.getElementById('psNetProfit').innerText = '0 元';
+                document.getElementById('psNetMargin').innerText = '+0.00% (0 元)';
+                document.getElementById('psRiskReward').innerText = '0.0倍 (CP值低)';
                 document.getElementById('psFrictionCost').innerText = '0 元';
                 return;
             }
 
-            // 1. 計算毛利與停損空間 (未填防守價時預設帶入 1.5% 停損比例)
+            // 1. 天花板防呆防錯校驗：天花板價格不應低於買入價
+            if (targetPrice < buyPrice) {
+                badgeBox.className = 'signal-badge-box signal-badge-red';
+                badgeText.innerText = '🔴 天花板不可低於買入價';
+                badgeDesc.innerText = '價差倒貼為虧本生意，請輸入高於買入價的天花板價';
+                document.getElementById('psNetMargin').innerText = '--';
+                document.getElementById('psRiskReward').innerText = '--';
+                document.getElementById('psFrictionCost').innerText = '0 元';
+                return;
+            }
+
+            // 2. 計算毛利、純利與划算度 (未填防守價時預設帶入 1.5% 停損比例)
             const profitMargin = ((targetPrice - buyPrice) / buyPrice) * 100;
             const lossMargin = (stopPrice > 0 && stopPrice < buyPrice)
                 ? ((buyPrice - stopPrice) / buyPrice) * 100
@@ -2659,7 +2668,7 @@
 
             // 扣除摩擦成本率 (個股約 0.585%, ETF 約 0.385%)
             const frictionRate = psIsETF ? 0.385 : 0.585;
-            const netProfitPercent = (profitMargin - frictionRate).toFixed(2);
+            const netProfitPercent = parseFloat((profitMargin - frictionRate).toFixed(2));
 
             // 金額明細計算
             const buyAmount = buyPrice * shares;
@@ -2675,24 +2684,29 @@
             const netProfitAmount = targetNetIncome - buyTotalCost;
             const totalFriction = buyFee + targetFee + targetTax;
 
-            document.getElementById('psNetMargin').innerText = `${netProfitPercent > 0 ? '+' : ''}${netProfitPercent}%`;
-            document.getElementById('psRiskReward').innerText = `${rrRatio.toFixed(1)} : 1`;
-            document.getElementById('psNetProfit').innerText = `${netProfitAmount > 0 ? '+' : ''}${netProfitAmount.toLocaleString('en-US')} 元`;
+            let cpText = '';
+            if (rrRatio >= 2.0) cpText = ' (CP值高)';
+            else if (rrRatio >= 1.5) cpText = ' (CP值尚可)';
+            else cpText = ' (CP值低)';
+
+            const formattedNetProfit = `${netProfitAmount > 0 ? '+' : ''}${netProfitAmount.toLocaleString('en-US')} 元`;
+            document.getElementById('psNetMargin').innerText = `${netProfitPercent > 0 ? '+' : ''}${netProfitPercent.toFixed(2)}% (${formattedNetProfit})`;
+            document.getElementById('psRiskReward').innerText = `${rrRatio.toFixed(1)}倍${cpText}`;
             document.getElementById('psFrictionCost').innerText = `${totalFriction.toLocaleString('en-US')} 元`;
 
-            // 2. 判斷燈號 (燈號小字顯示判定門檻 Range)
-            if (profitMargin >= 3.5 && rrRatio >= 2.0) {
+            // 3. 判斷燈號 (一律用純利與划算度判定)
+            if (netProfitPercent >= 3.0 && rrRatio >= 2.0) {
                 badgeBox.className = 'signal-badge-box signal-badge-green';
                 badgeText.innerText = '🟢 空間充足！可建立部位';
-                badgeDesc.innerText = '毛利 ≥ 3.5% 且 損益比 ≥ 2.0';
-            } else if (profitMargin >= 2.0) {
+                badgeDesc.innerText = '純利 ≥ +3.0% 且 划算度 ≥ 2.0';
+            } else if (netProfitPercent >= 1.5 && netProfitPercent <= 2.9) {
                 badgeBox.className = 'signal-badge-box signal-badge-yellow';
                 badgeText.innerText = '🟡 天花板稍近，注意手續費吞噬';
-                badgeDesc.innerText = '毛利介於 2.0% 和 3.4% 之間，價差偏窄';
+                badgeDesc.innerText = '純利介於 +1.5% ~ +2.9% 之間';
             } else {
                 badgeBox.className = 'signal-badge-box signal-badge-red';
                 badgeText.innerText = '🔴 利潤被手續費吃光，果斷放棄';
-                badgeDesc.innerText = '毛利 < 2.0% 或 損益比 < 1.5';
+                badgeDesc.innerText = '純利 < +1.5% 或 划算度 < 1.5';
             }
         }
 
