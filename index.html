@@ -94,8 +94,17 @@
                 background: rgba(255, 255, 255, 0.04);
                 border: 1px solid var(--border-color);
                 border-radius: 2rem;
-                padding: 0.2rem 0.45rem;
+                padding: 0.2rem 0.45rem 0.2rem 0.25rem;
                 flex-shrink: 0;
+                cursor: pointer;
+                user-select: none;
+                -webkit-user-select: none;
+                transition: background-color 0.15s ease, transform 0.1s ease;
+            }
+
+            .auto-refresh-timer:active {
+                transform: scale(0.95);
+                background: rgba(255, 255, 255, 0.12);
             }
 
             .ring-container {
@@ -132,42 +141,6 @@
                 color: var(--accent-gold);
                 font-variant-numeric: tabular-nums;
                 line-height: 1;
-            }
-
-            .data-status-badge {
-                display: inline-block;
-                font-size: 0.7rem;
-                font-weight: 700;
-                padding: 0.08rem 0.35rem;
-                border-radius: 0.2rem;
-                margin-left: 0.3rem;
-                transition: all 0.3s ease;
-                vertical-align: middle;
-            }
-
-            .data-updated {
-                background: rgba(67, 225, 200, 0.18);
-                color: hsl(170, 75%, 72%);
-                border: 1px solid rgba(67, 225, 200, 0.4);
-                animation: flashPulse 1.2s ease-out 1;
-            }
-
-            .data-unchanged {
-                background: rgba(255, 255, 255, 0.05);
-                color: var(--text-secondary);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-            }
-
-            @keyframes flashPulse {
-                0% {
-                    transform: scale(1.12);
-                    box-shadow: 0 0 8px rgba(67, 225, 200, 0.5);
-                }
-
-                100% {
-                    transform: scale(1);
-                    box-shadow: none;
-                }
             }
 
             .version-badge {
@@ -339,34 +312,41 @@
             }
 
             .stats-row-3 {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 0.2rem;
                 background: rgba(255, 255, 255, 0.03);
                 border: 1px solid var(--border-color);
                 border-radius: 0.5rem;
-                padding: 0.45rem 0.75rem;
+                padding: 0.4rem 0.2rem;
                 margin: 0.5rem 0 0.4rem 0;
             }
 
             .stat-cell {
                 display: flex;
+                flex-direction: column;
                 align-items: center;
-                justify-content: space-between;
+                justify-content: flex-start;
                 font-size: 0.85rem;
                 font-variant-numeric: tabular-nums;
+                text-align: center;
+                padding: 0 0.15rem;
+            }
+
+            .stat-cell:not(:last-child) {
+                border-right: 1px solid rgba(255, 255, 255, 0.06);
             }
 
             .stat-label {
-                margin-right: 0.2rem;
                 color: var(--text-secondary);
-                font-size: 0.8rem;
+                font-size: 0.72rem;
                 font-weight: 500;
+                margin-bottom: 0.15rem;
             }
 
             .close-price-editable {
                 font-weight: 700;
-                font-size: 0.9rem;
+                font-size: 0.85rem;
                 color: var(--primary-color);
                 cursor: pointer;
                 border-bottom: 1px dashed var(--primary-color);
@@ -1179,7 +1159,13 @@
                 body {
                     padding-bottom: 5.5rem;
                     height: auto !important;
-                    overflow: auto !important;
+                    overflow-x: hidden !important;
+                    overflow-y: auto !important;
+                }
+
+                .viewport-wrapper {
+                    overflow: visible !important;
+                    width: 100%;
                 }
 
                 .global-top-bar,
@@ -1198,14 +1184,11 @@
 
                 .stock-card {
                     margin: 0;
+                    width: 100%;
                     max-width: 100%;
                     overflow: visible;
                     height: auto !important;
                     max-height: none !important;
-                }
-
-                .table-scroll-box {
-                    padding-top: 0.75rem;
                 }
 
                 .floating-bar {
@@ -1227,20 +1210,21 @@
 
                 .global-top-bar,
                 .bias-rules-banner {
-                    max-width: 82rem;
+                    max-width: 78rem;
                 }
 
                 .stocks-container {
                     display: grid;
-                    grid-template-columns: repeat(3, 1fr);
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
                     gap: 1.25rem;
                     left: 0 !important;
                     width: 100%;
-                    max-width: 82rem;
+                    max-width: 78rem;
                 }
 
                 .stock-card {
                     margin: 0;
+                    width: 100%;
                     max-width: 100%;
                     overflow: visible;
                     height: auto !important;
@@ -1300,7 +1284,7 @@
 
     <div class="global-top-bar">
         <div class="top-bar-left">
-            <div class="auto-refresh-timer" title="盤中每 60 秒自動刷新數據">
+            <div class="auto-refresh-timer" onclick="toggleSimulateTrading()" title="點擊可即時切換/體驗盤中 60s 倒數與報價更新視覺">
                 <div class="ring-container">
                     <svg viewBox="0 0 36 36">
                         <path class="ring-bg"
@@ -1313,7 +1297,7 @@
             </div>
             <div class="global-timestamp" id="globalTimestamp">數據載入中...</div>
         </div>
-        <div class="version-badge" id="versionBadge" onclick="forceReloadApp()" title="點擊強制重載 Web App (破除快取)">v0808.01
+        <div class="version-badge" id="versionBadge" onclick="forceReloadApp()" title="點擊強制重載 Web App (破除快取)">v0808.03
         </div>
     </div>
 
@@ -1769,22 +1753,21 @@
 
         function updateGlobalTimestamp(timestampMs, isDataChanged) {
             const targetDate = timestampMs ? new Date(timestampMs) : new Date();
-            const year = targetDate.getFullYear();
+            const year = String(targetDate.getFullYear()).slice(-2);
             const month = String(targetDate.getMonth() + 1).padStart(2, '0');
             const date = String(targetDate.getDate()).padStart(2, '0');
-            const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
             const dayName = days[targetDate.getDay()];
             const timeStr = targetDate.toLocaleTimeString('zh-TW', { hour12: false });
 
-            let prefix = timestampMs ? "資料時間：" : "當前時間：";
-            let statusBadgeHtml = '';
+            let statusText = '';
             if (isDataChanged === true) {
-                statusBadgeHtml = `<span class="data-status-badge data-updated">✨ 報價已更新</span>`;
+                statusText = ' (有新報價✨)';
             } else if (isDataChanged === false && lastDataSnapshot !== '') {
-                statusBadgeHtml = `<span class="data-status-badge data-unchanged">無新異動</span>`;
+                statusText = ' (暫無異動)';
             }
 
-            document.getElementById('globalTimestamp').innerHTML = `${prefix}${statusBadgeHtml}<br>${year}-${month}-${date} ${dayName} ${timeStr}`;
+            document.getElementById('globalTimestamp').innerHTML = `最後更新${statusText}：<br>${year}-${month}-${date} ${dayName} ${timeStr}`;
         }
 
         async function searchStockByChineseName(query) {
@@ -2197,16 +2180,35 @@
                     if (validLows.length > 0) dayLow = Math.min(...validLows);
                 }
 
+                if (manualPrevCloses[stock.symbol]) previousClose = manualPrevCloses[stock.symbol];
+                const prevEl = document.getElementById(`prev-${index}`);
+                if (prevEl) prevEl.innerText = formatPrice(previousClose, isETF);
+
                 const highEl = document.getElementById(`high-${index}`);
                 const lowEl = document.getElementById(`low-${index}`);
                 const volEl = document.getElementById(`vol-${index}`);
 
-                if (highEl) highEl.innerText = dayHigh ? formatPrice(dayHigh, isETF) : '--';
-                if (lowEl) lowEl.innerText = dayLow ? formatPrice(dayLow, isETF) : '--';
-                if (volEl) volEl.innerText = dayVol ? formatVolume(dayVol) : '--';
+                if (highEl) {
+                    if (dayHigh && previousClose > 0) {
+                        const highDiff = ((dayHigh - previousClose) / previousClose) * 100;
+                        const sign = highDiff > 0 ? '+' : '';
+                        highEl.innerHTML = `${formatPrice(dayHigh, isETF)}<br><span style="font-size:0.6rem; font-weight:600; display:block; margin-top:1px;">(${sign}${highDiff.toFixed(2)}%)</span>`;
+                    } else {
+                        highEl.innerText = dayHigh ? formatPrice(dayHigh, isETF) : '--';
+                    }
+                }
 
-                if (manualPrevCloses[stock.symbol]) previousClose = manualPrevCloses[stock.symbol];
-                document.getElementById(`prev-${index}`).innerHTML = formatPrice(previousClose, isETF);
+                if (lowEl) {
+                    if (dayLow && previousClose > 0) {
+                        const lowDiff = ((dayLow - previousClose) / previousClose) * 100;
+                        const sign = lowDiff > 0 ? '+' : '';
+                        lowEl.innerHTML = `${formatPrice(dayLow, isETF)}<br><span style="font-size:0.6rem; font-weight:600; display:block; margin-top:1px;">(${sign}${lowDiff.toFixed(2)}%)</span>`;
+                    } else {
+                        lowEl.innerText = dayLow ? formatPrice(dayLow, isETF) : '--';
+                    }
+                }
+
+                if (volEl) volEl.innerText = dayVol ? formatVolume(dayVol) : '--';
 
                 runtimeTechnicalCache[stock.symbol] = { currentPrice };
                 renderCombinedTable(tableBox, previousClose, currentPrice, index, isETF);
@@ -2245,8 +2247,21 @@
         let countdownInterval = null;
         let countdownRemaining = 60;
         let lastDataSnapshot = '';
+        let isSimulatingTrading = false;
+        let simDataToggle = true;
+
+        function toggleSimulateTrading() {
+            isSimulatingTrading = !isSimulatingTrading;
+            if (isSimulatingTrading) {
+                countdownRemaining = 60;
+                fetchAllData(true);
+            } else {
+                updateCountdownUI();
+            }
+        }
 
         function isTradingWindow() {
+            if (isSimulatingTrading) return true;
             const now = new Date();
             const day = now.getDay();
             if (day === 0 || day === 6) return false; // 週六、週日非交易日
@@ -2273,7 +2288,7 @@
                 if (countdownRemaining <= 0) {
                     countdownRemaining = 60;
                     updateCountdownUI();
-                    fetchAllData();
+                    fetchAllData(isSimulatingTrading);
                 } else {
                     updateCountdownUI();
                 }
@@ -2293,11 +2308,11 @@
             if (!isTradingWindow()) {
                 if (text) text.innerText = '休市';
                 if (circle) circle.style.strokeDashoffset = '0';
-                if (timerBox) timerBox.title = '非盤中交易時間 (盤中 08:40 - 13:50 每 60 秒自動刷新)';
+                if (timerBox) timerBox.title = '非盤中交易時間 (點擊可開啟盤中模擬測試模式)';
                 return;
             }
 
-            if (timerBox) timerBox.title = '盤中交易時間 (08:40 - 13:50)，每 60 秒自動刷新最新數據';
+            if (timerBox) timerBox.title = '盤中交易時間 (08:40 - 13:50)，每 60 秒自動刷新數據 (點擊切換休市)';
             if (text) text.innerText = `${countdownRemaining}s`;
             if (circle) {
                 const offset = ((60 - countdownRemaining) / 60) * 100;
@@ -2305,7 +2320,7 @@
             }
         }
 
-        async function fetchAllData() {
+        async function fetchAllData(forceSimulate) {
             resetAutoRefreshTimer();
             document.getElementById('globalTimestamp').innerHTML = "數據載入中...";
             latestMarketTime = 0;
@@ -2318,8 +2333,13 @@
             }).join('|') + '_' + latestMarketTime;
 
             let isDataChanged = undefined;
-            if (lastDataSnapshot !== '') {
-                isDataChanged = (lastDataSnapshot !== currentSnapshot);
+            if (forceSimulate || lastDataSnapshot !== '') {
+                if (forceSimulate) {
+                    isDataChanged = simDataToggle;
+                    simDataToggle = !simDataToggle;
+                } else {
+                    isDataChanged = (lastDataSnapshot !== currentSnapshot);
+                }
             }
             lastDataSnapshot = currentSnapshot;
 
@@ -2442,7 +2462,7 @@
         }
 
         function moveSlide(direction) {
-            if (window.innerWidth >= 768) return;
+            if (window.innerWidth >= 480) return;
             currentSlideIndex += direction;
             if (currentSlideIndex < 0) currentSlideIndex = 0;
             if (currentSlideIndex >= stockList.length) currentSlideIndex = stockList.length - 1;
@@ -2450,14 +2470,15 @@
         }
 
         function updateSlidePosition() {
-            if (window.innerWidth < 768) {
-                const container = document.getElementById('stocksContainer');
-                container.style.left = `-${currentSlideIndex * 100}%`;
-
+            const container = document.getElementById('stocksContainer');
+            if (window.innerWidth < 480) {
+                if (container) container.style.left = `-${currentSlideIndex * 100}%`;
                 const currentTableBox = document.getElementById(`table-box-${currentSlideIndex}`);
                 if (currentTableBox) {
                     setTimeout(() => scrollToAnchorRow(currentTableBox), 50);
                 }
+            } else {
+                if (container) container.style.left = '0px';
             }
             updatePageIndicator();
         }
