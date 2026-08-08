@@ -129,6 +129,42 @@
                 line-height: 1;
             }
 
+            .data-status-badge {
+                display: inline-block;
+                font-size: 0.7rem;
+                font-weight: 700;
+                padding: 0.08rem 0.35rem;
+                border-radius: 0.2rem;
+                margin-left: 0.3rem;
+                transition: all 0.3s ease;
+                vertical-align: middle;
+            }
+
+            .data-updated {
+                background: rgba(67, 225, 200, 0.18);
+                color: hsl(170, 75%, 72%);
+                border: 1px solid rgba(67, 225, 200, 0.4);
+                animation: flashPulse 1.2s ease-out 1;
+            }
+
+            .data-unchanged {
+                background: rgba(255, 255, 255, 0.05);
+                color: var(--text-secondary);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            @keyframes flashPulse {
+                0% {
+                    transform: scale(1.12);
+                    box-shadow: 0 0 8px rgba(67, 225, 200, 0.5);
+                }
+
+                100% {
+                    transform: scale(1);
+                    box-shadow: none;
+                }
+            }
+
             .version-badge {
                 font-size: 0.75rem;
                 color: var(--text-secondary);
@@ -1252,7 +1288,7 @@
             </div>
             <div class="global-timestamp" id="globalTimestamp">數據載入中...</div>
         </div>
-        <div class="version-badge" id="versionBadge" onclick="forceReloadApp()" title="點擊強制重載 Web App (破除快取)">v0807.03
+        <div class="version-badge" id="versionBadge" onclick="forceReloadApp()" title="點擊強制重載 Web App (破除快取)">v0808.01
         </div>
     </div>
 
@@ -1706,7 +1742,7 @@
             }
         }
 
-        function updateGlobalTimestamp(timestampMs) {
+        function updateGlobalTimestamp(timestampMs, isDataChanged) {
             const targetDate = timestampMs ? new Date(timestampMs) : new Date();
             const year = targetDate.getFullYear();
             const month = String(targetDate.getMonth() + 1).padStart(2, '0');
@@ -1716,7 +1752,14 @@
             const timeStr = targetDate.toLocaleTimeString('zh-TW', { hour12: false });
 
             let prefix = timestampMs ? "資料時間：" : "當前時間：";
-            document.getElementById('globalTimestamp').innerHTML = `${prefix}<br>${year}-${month}-${date} ${dayName} ${timeStr}`;
+            let statusBadgeHtml = '';
+            if (isDataChanged === true) {
+                statusBadgeHtml = `<span class="data-status-badge data-updated">✨ 報價已更新</span>`;
+            } else if (isDataChanged === false && lastDataSnapshot !== '') {
+                statusBadgeHtml = `<span class="data-status-badge data-unchanged">無新異動</span>`;
+            }
+
+            document.getElementById('globalTimestamp').innerHTML = `${prefix}${statusBadgeHtml}<br>${year}-${month}-${date} ${dayName} ${timeStr}`;
         }
 
         async function searchStockByChineseName(query) {
@@ -2176,6 +2219,19 @@
 
         let countdownInterval = null;
         let countdownRemaining = 60;
+        let lastDataSnapshot = '';
+
+        function isTradingWindow() {
+            const now = new Date();
+            const day = now.getDay();
+            if (day === 0 || day === 6) return false; // 週六、週日非交易日
+
+            const mins = now.getHours() * 60 + now.getMinutes();
+            const startMins = 8 * 60 + 40; // 08:40 (520分鐘)
+            const endMins = 13 * 60 + 50;  // 13:50 (830分鐘)
+
+            return mins >= startMins && mins <= endMins;
+        }
 
         function startAutoRefreshTimer() {
             if (countdownInterval) clearInterval(countdownInterval);
@@ -2183,6 +2239,11 @@
             updateCountdownUI();
 
             countdownInterval = setInterval(() => {
+                if (!isTradingWindow()) {
+                    updateCountdownUI();
+                    return;
+                }
+
                 countdownRemaining--;
                 if (countdownRemaining <= 0) {
                     countdownRemaining = 60;
@@ -2202,6 +2263,16 @@
         function updateCountdownUI() {
             const circle = document.getElementById('countdownCircle');
             const text = document.getElementById('countdownText');
+            const timerBox = document.querySelector('.auto-refresh-timer');
+
+            if (!isTradingWindow()) {
+                if (text) text.innerText = '休市';
+                if (circle) circle.style.strokeDashoffset = '0';
+                if (timerBox) timerBox.title = '非盤中交易時間 (盤中 08:40 - 13:50 每 60 秒自動刷新)';
+                return;
+            }
+
+            if (timerBox) timerBox.title = '盤中交易時間 (08:40 - 13:50)，每 60 秒自動刷新最新數據';
             if (text) text.innerText = `${countdownRemaining}s`;
             if (circle) {
                 const offset = ((60 - countdownRemaining) / 60) * 100;
@@ -2216,11 +2287,19 @@
             const promises = stockList.map((stock, index) => fetchSingleStock(stock, index));
             await Promise.all(promises);
 
-            if (latestMarketTime > 0) {
-                updateGlobalTimestamp(latestMarketTime);
-            } else {
-                updateGlobalTimestamp(Date.now());
+            const currentSnapshot = stockList.map(s => {
+                const c = runtimeTechnicalCache[s.symbol];
+                return `${s.symbol}:${c?.currentPrice || 0}`;
+            }).join('|') + '_' + latestMarketTime;
+
+            let isDataChanged = undefined;
+            if (lastDataSnapshot !== '') {
+                isDataChanged = (lastDataSnapshot !== currentSnapshot);
             }
+            lastDataSnapshot = currentSnapshot;
+
+            const timeToUse = latestMarketTime > 0 ? latestMarketTime : Date.now();
+            updateGlobalTimestamp(timeToUse, isDataChanged);
         }
 
         function getBiasStr(maPrice, currentPrice) {
