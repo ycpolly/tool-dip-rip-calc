@@ -1307,7 +1307,7 @@
             </div>
             <div class="global-timestamp" id="globalTimestamp">數據載入中...</div>
         </div>
-        <div class="version-badge" id="versionBadge" onclick="forceReloadApp()" title="點擊強制重載 Web App (破除快取)">v0808.04
+        <div class="version-badge" id="versionBadge" onclick="forceReloadApp()" title="點擊強制重載 Web App (破除快取)">v0808.05
         </div>
     </div>
 
@@ -2073,7 +2073,7 @@
             const currentVal = manualPrevCloses[symbol] || document.getElementById(`prev-${index}`).innerText;
             const parseCurrent = parseFloat(currentVal);
 
-            const userInput = prompt(`[手動修正昨收價] 請輸入 ${stockList[index].name}(${symbol}) 的正確昨收價格:`, isNaN(parseCurrent) ? '' : parseCurrent);
+            const userInput = prompt(`[手動修正昨收價]\n請輸入 ${symbol} 正確昨收價格：`, isNaN(parseCurrent) ? '' : parseCurrent);
             if (userInput === null) return;
 
             const newPrice = parseFloat(userInput);
