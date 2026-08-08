@@ -20,6 +20,11 @@
         rel="stylesheet">
 
     <style>
+        :root,
+        html {
+            font-size: 18px;
+        }
+
         :root {
             --bg-color: #101214;
             --card-bg: #1d2126;
@@ -1170,29 +1175,33 @@
                 justify-content: space-between;
             }
 
-            @media (min-width: 768px) {
+            @media (min-width: 480px) {
                 body {
                     padding-bottom: 5.5rem;
+                    height: auto !important;
+                    overflow: auto !important;
                 }
 
                 .global-top-bar,
                 .bias-rules-banner {
-                    max-width: 75rem;
+                    max-width: 100%;
                 }
 
                 .stocks-container {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(23rem, 1fr));
-                    gap: 1.2rem;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 1rem;
                     left: 0 !important;
                     width: 100%;
-                    max-width: 75rem;
+                    max-width: 100%;
                 }
 
                 .stock-card {
                     margin: 0;
                     max-width: 100%;
                     overflow: visible;
+                    height: auto !important;
+                    max-height: none !important;
                 }
 
                 .table-scroll-box {
@@ -1207,23 +1216,39 @@
                     transform: none;
                 }
 
-                .nav-group-arrows-fat {
-                    display: none;
-                }
-
+                .nav-group-arrows-fat,
                 .story-tap-area-left,
                 .story-tap-area-right {
                     display: none;
                 }
             }
 
-            @media (max-width: 767px) {
+            @media (min-width: 1024px) {
 
-                :root,
-                html {
-                    font-size: 20px !important;
+                .global-top-bar,
+                .bias-rules-banner {
+                    max-width: 82rem;
                 }
 
+                .stocks-container {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 1.25rem;
+                    left: 0 !important;
+                    width: 100%;
+                    max-width: 82rem;
+                }
+
+                .stock-card {
+                    margin: 0;
+                    max-width: 100%;
+                    overflow: visible;
+                    height: auto !important;
+                    max-height: none !important;
+                }
+            }
+
+            @media (max-width: 479px) {
                 body {
                     padding: 0.75rem 0.75rem 0 0.75rem;
                     height: 100vh;
