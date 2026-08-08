@@ -327,7 +327,7 @@
                 flex-direction: column;
                 align-items: center;
                 justify-content: flex-start;
-                font-size: 0.85rem;
+                font-size: 0.9rem;
                 font-variant-numeric: tabular-nums;
                 text-align: center;
                 padding: 0 0.15rem;
@@ -346,7 +346,7 @@
 
             .close-price-editable {
                 font-weight: 700;
-                font-size: 0.85rem;
+                font-size: 0.9rem;
                 color: var(--primary-color);
                 cursor: pointer;
                 border-bottom: 1px dashed var(--primary-color);
@@ -1155,7 +1155,7 @@
                 justify-content: space-between;
             }
 
-            @media (min-width: 480px) {
+            @media (min-width: 768px) {
                 body {
                     padding-bottom: 5.5rem;
                     height: auto !important;
@@ -1175,7 +1175,7 @@
 
                 .stocks-container {
                     display: grid;
-                    grid-template-columns: repeat(2, 1fr);
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
                     gap: 1rem;
                     left: 0 !important;
                     width: 100%;
@@ -1232,7 +1232,7 @@
                 }
             }
 
-            @media (max-width: 479px) {
+            @media (max-width: 767px) {
                 body {
                     padding: 0.75rem 0.75rem 0 0.75rem;
                     height: 100vh;
@@ -1240,9 +1240,16 @@
                     overflow: hidden;
                 }
 
+                .global-top-bar {
+                    max-width: 30rem;
+                    margin: 0 auto 0.75rem auto;
+                }
+
                 .viewport-wrapper {
-                    overflow-x: hidden;
+                    overflow: hidden !important;
                     width: 100%;
+                    max-width: 30rem;
+                    margin: 0 auto;
                     min-height: 20rem;
                     touch-action: pan-y;
                 }
@@ -1250,6 +1257,9 @@
                 .stock-card {
                     display: flex;
                     flex-direction: column;
+                    flex: 0 0 100% !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
                     height: calc(100vh - 8.5rem);
                     height: calc(100dvh - 8.5rem - env(safe-area-inset-bottom, 0px));
                     max-height: calc(100vh - 8.5rem);
@@ -1284,7 +1294,7 @@
 
     <div class="global-top-bar">
         <div class="top-bar-left">
-            <div class="auto-refresh-timer" onclick="toggleSimulateTrading()" title="點擊可即時切換/體驗盤中 60s 倒數與報價更新視覺">
+            <div class="auto-refresh-timer" title="盤中每 60 秒自動更新數據">
                 <div class="ring-container">
                     <svg viewBox="0 0 36 36">
                         <path class="ring-bg"
@@ -1297,7 +1307,7 @@
             </div>
             <div class="global-timestamp" id="globalTimestamp">數據載入中...</div>
         </div>
-        <div class="version-badge" id="versionBadge" onclick="forceReloadApp()" title="點擊強制重載 Web App (破除快取)">v0808.03
+        <div class="version-badge" id="versionBadge" onclick="forceReloadApp()" title="點擊強制重載 Web App (破除快取)">v0808.04
         </div>
     </div>
 
@@ -2191,8 +2201,8 @@
                 if (highEl) {
                     if (dayHigh && previousClose > 0) {
                         const highDiff = ((dayHigh - previousClose) / previousClose) * 100;
-                        const sign = highDiff > 0 ? '+' : '';
-                        highEl.innerHTML = `${formatPrice(dayHigh, isETF)}<br><span style="font-size:0.6rem; font-weight:600; display:block; margin-top:1px;">(${sign}${highDiff.toFixed(2)}%)</span>`;
+                        const sign = highDiff > 0 ? '▲' : highDiff < 0 ? '▼' : '';
+                        highEl.innerHTML = `${formatPrice(dayHigh, isETF)}<br><span style="font-size:0.6rem; font-weight:600; display:block; margin-top:1px;">${sign} ${Math.abs(highDiff).toFixed(2)}%</span>`;
                     } else {
                         highEl.innerText = dayHigh ? formatPrice(dayHigh, isETF) : '--';
                     }
@@ -2201,8 +2211,8 @@
                 if (lowEl) {
                     if (dayLow && previousClose > 0) {
                         const lowDiff = ((dayLow - previousClose) / previousClose) * 100;
-                        const sign = lowDiff > 0 ? '+' : '';
-                        lowEl.innerHTML = `${formatPrice(dayLow, isETF)}<br><span style="font-size:0.6rem; font-weight:600; display:block; margin-top:1px;">(${sign}${lowDiff.toFixed(2)}%)</span>`;
+                        const sign = lowDiff > 0 ? '▲' : lowDiff < 0 ? '▼' : '';
+                        lowEl.innerHTML = `${formatPrice(dayLow, isETF)}<br><span style="font-size:0.6rem; font-weight:600; display:block; margin-top:1px;">${sign} ${Math.abs(lowDiff).toFixed(2)}%</span>`;
                     } else {
                         lowEl.innerText = dayLow ? formatPrice(dayLow, isETF) : '--';
                     }
@@ -2247,21 +2257,8 @@
         let countdownInterval = null;
         let countdownRemaining = 60;
         let lastDataSnapshot = '';
-        let isSimulatingTrading = false;
-        let simDataToggle = true;
-
-        function toggleSimulateTrading() {
-            isSimulatingTrading = !isSimulatingTrading;
-            if (isSimulatingTrading) {
-                countdownRemaining = 60;
-                fetchAllData(true);
-            } else {
-                updateCountdownUI();
-            }
-        }
 
         function isTradingWindow() {
-            if (isSimulatingTrading) return true;
             const now = new Date();
             const day = now.getDay();
             if (day === 0 || day === 6) return false; // 週六、週日非交易日
@@ -2288,7 +2285,7 @@
                 if (countdownRemaining <= 0) {
                     countdownRemaining = 60;
                     updateCountdownUI();
-                    fetchAllData(isSimulatingTrading);
+                    fetchAllData();
                 } else {
                     updateCountdownUI();
                 }
@@ -2308,11 +2305,11 @@
             if (!isTradingWindow()) {
                 if (text) text.innerText = '休市';
                 if (circle) circle.style.strokeDashoffset = '0';
-                if (timerBox) timerBox.title = '非盤中交易時間 (點擊可開啟盤中模擬測試模式)';
+                if (timerBox) timerBox.title = '非盤中交易時間 (週一至週五 08:40 - 13:50 自動刷新)';
                 return;
             }
 
-            if (timerBox) timerBox.title = '盤中交易時間 (08:40 - 13:50)，每 60 秒自動刷新數據 (點擊切換休市)';
+            if (timerBox) timerBox.title = '盤中交易時間 (08:40 - 13:50)，每 60 秒自動更新數據';
             if (text) text.innerText = `${countdownRemaining}s`;
             if (circle) {
                 const offset = ((60 - countdownRemaining) / 60) * 100;
@@ -2320,7 +2317,7 @@
             }
         }
 
-        async function fetchAllData(forceSimulate) {
+        async function fetchAllData() {
             resetAutoRefreshTimer();
             document.getElementById('globalTimestamp').innerHTML = "數據載入中...";
             latestMarketTime = 0;
@@ -2333,13 +2330,8 @@
             }).join('|') + '_' + latestMarketTime;
 
             let isDataChanged = undefined;
-            if (forceSimulate || lastDataSnapshot !== '') {
-                if (forceSimulate) {
-                    isDataChanged = simDataToggle;
-                    simDataToggle = !simDataToggle;
-                } else {
-                    isDataChanged = (lastDataSnapshot !== currentSnapshot);
-                }
+            if (lastDataSnapshot !== '') {
+                isDataChanged = (lastDataSnapshot !== currentSnapshot);
             }
             lastDataSnapshot = currentSnapshot;
 
@@ -2462,7 +2454,7 @@
         }
 
         function moveSlide(direction) {
-            if (window.innerWidth >= 480) return;
+            if (window.innerWidth >= 768) return;
             currentSlideIndex += direction;
             if (currentSlideIndex < 0) currentSlideIndex = 0;
             if (currentSlideIndex >= stockList.length) currentSlideIndex = stockList.length - 1;
@@ -2471,7 +2463,7 @@
 
         function updateSlidePosition() {
             const container = document.getElementById('stocksContainer');
-            if (window.innerWidth < 480) {
+            if (window.innerWidth < 768) {
                 if (container) container.style.left = `-${currentSlideIndex * 100}%`;
                 const currentTableBox = document.getElementById(`table-box-${currentSlideIndex}`);
                 if (currentTableBox) {
